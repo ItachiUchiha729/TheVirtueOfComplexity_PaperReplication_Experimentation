@@ -411,7 +411,7 @@ def run_ipca_grass_v2(
         W_t, f_tr, _ = est.fit(
             data           = [rets_tr, Z_tr],
             optimizer      = "ConjugateGradient",
-            max_iterations = 200,
+            max_iterations = 50, # reduce for faster backtest; increase for more accurate convergence diagnostics
             verbosity      = 0,
             log_verbosity  = 0,
         )
