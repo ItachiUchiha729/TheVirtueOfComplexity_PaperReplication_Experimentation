@@ -78,6 +78,7 @@ def _run_one(job: dict) -> dict:
         df_trunc         = df_trunc,
         char_feats       = rff_cols,
         num_fact         = job["num_fact"],
+        verbose          = job.get("verbose", False),
         window_len       = job["window_len"],
         max_nan          = 0.3,
         max_zero         = 0.3,
@@ -243,7 +244,7 @@ def _optimal_workers(jobs: list[dict]) -> int:
 # ===========================================================================
 # STEP 3 — PARALLEL EXECUTION
 # ===========================================================================
-def run_sweep(jobs, n_workers=None):
+def run_sweep(jobs, n_workers=None, verbose=False):
     """
     Dispatches all jobs in parallel via joblib/loky.
 
@@ -256,22 +257,28 @@ def run_sweep(jobs, n_workers=None):
     joblib pre_dispatch='all' sends all jobs to the queue immediately so
     workers always have the next job ready without waiting for the
     scheduler — important when job times vary widely.
+
+    Parameters
+    ----------
+    verbose : bool, default False
+        If True, print dispatch info and enable joblib progress messages.
     """
     if n_workers is None:
         n_workers = _optimal_workers(jobs)
 
-    n_jobs_total = len(jobs)
-    cost_range   = (
-        f"cost range {_job_cost(jobs[-1]):.0f}–{_job_cost(jobs[0]):.0f}"
-        if jobs else ""
-    )
-    print(f"Dispatching {n_jobs_total} jobs across {n_workers} workers "
-          f"({cost_range}, LPT order) ...")
+    if verbose:
+        n_jobs_total = len(jobs)
+        cost_range   = (
+            f"cost range {_job_cost(jobs[-1]):.0f}–{_job_cost(jobs[0]):.0f}"
+            if jobs else ""
+        )
+        print(f"Dispatching {n_jobs_total} jobs across {n_workers} workers "
+              f"({cost_range}, LPT order) ...")
 
     return Parallel(
         n_jobs       = n_workers,
         backend      = "loky",
-        verbose      = 10,
+        verbose      = 10 if verbose else 0,
         pre_dispatch = "all",   # all jobs queued immediately; workers never idle
     )(delayed(_run_one)(j) for j in jobs)
 

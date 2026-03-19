@@ -51,6 +51,21 @@ The metrics here measure all three manifestations:
       Large gap → clean identification; near zero → last factor sits on
       the noise floor and the subspace is underdetermined.
 
+  METRIC 6 — Normalised d_proj  [NEW]
+      d_proj_norm = d_proj / d_proj_random_baseline
+      where d_proj_random_baseline = sqrt(2k(m-k)/(m+1)) is the expected
+      distance between two Haar-uniform random points on Gr(m,k).
+      Removes the ambient-dimension effect so d_proj is comparable across
+      different P values.
+      0 → perfectly stable, 1 → as unstable as two independent random draws.
+
+  METRIC 7 — Between-seed d_proj  [NEW — direct Theorem 6.1(i) test]
+      Fit a second solution W_t_rand from a fresh random W0 and compute
+      d_proj between warm-start solution W_t and W_t_rand.
+      Directly tests Theorem 6.1(i): flat Hessian → O(1) rotations →
+      large d_proj_seeds. Curved Hessian → both inits converge → small
+      d_proj_seeds. Independent of rolling-window design.
+
 Dependencies
 ------------
   numpy, GrassmannManifoldIPCAEstimator (from IPCA_Grass_estimator.py)
@@ -180,6 +195,8 @@ def run_ipca_grass_v2(
     max_zero: float = 0.3,
     min_non_nan_frac: float = 0.7,
     shrinkage: float = 0.0,
+    compute_seed_variance: bool = True,
+    verbose: bool = True,
 ) -> dict:
     """
     Rolling-window out-of-sample backtest for Grassmann-IPCA with a full
@@ -281,6 +298,31 @@ def run_ipca_grass_v2(
         mean_spectral_gap      : float  — mean gap_ratio across windows
         spectral_gap_series    : list[float]
             Per-window gap_ratio values ∈ [0, 1].
+
+        Normalised d_proj (Metric 6 — NEW)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        mean_d_proj_norm       : float
+            Mean of d_proj / d_proj_random_baseline across windows.
+            Baseline = sqrt(2k(m-k)/(m+1)), the expected d_proj between
+            two Haar-random points on Gr(m,k). Values near 1 indicate
+            the subspace moves as much as random; near 0 indicates
+            genuine stability independent of ambient dimension.
+        d_proj_norm_series     : list[float]
+            Per-window normalised d_proj values.
+        d_proj_random_baseline : float
+            The Haar-random expected d_proj = sqrt(2k(m-k)/(m+1)).
+
+        Between-seed d_proj (Metric 7 — NEW)
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        mean_d_proj_seeds      : float
+            Mean d_proj between warm-start solution and a second
+            independent random-init solution, computed per window.
+            Large → flat Hessian (different inits land far apart).
+            Small → curved Hessian (both inits find the same basin).
+            This is the direct empirical test of Theorem 6.1(i).
+        d_proj_seeds_series    : list[float]
+            Per-window between-seed d_proj values.
+            Only populated when compute_seed_variance=True.
     """
 
     # ------------------------------------------------------------------
@@ -367,7 +409,17 @@ def run_ipca_grass_v2(
     rets_stock = rets_panel.to_numpy(dtype=float)
 
     T, N = rets_stock.shape
+    m_dim = Z.shape[2]   # ambient dimension of Gr(m,k)
     preds_stock = np.full_like(rets_stock, np.nan, dtype=float)
+
+    # Haar-random baseline for normalised d_proj (Metric 6).
+    # Two points drawn from the uniform (Haar) measure on Gr(m,k) have:
+    #   E[d_proj^2] = 2k(m-k)/(m+1)
+    # This is derived from E[sin^2(theta_i)] = (m-k)/(m+1) for each
+    # principal angle under the Haar measure.
+    d_proj_random_baseline = float(
+        np.sqrt(2 * num_fact * (m_dim - num_fact) / (m_dim + 1))
+    )
 
     # ------------------------------------------------------------------
     # 8. ACCUMULATOR INITIALISATION
@@ -390,6 +442,12 @@ def run_ipca_grass_v2(
     # ── NEW Metric 5: Spectral gap ────────────────────────────────────
     spectral_gap_series = []   # gap_ratio ∈ [0, 1] per window
 
+
+    # ── NEW Metric 6: Normalised d_proj ──────────────────────────
+    d_proj_norm_series  = []
+
+    # ── NEW Metric 7: Between-seed d_proj ────────────────────────
+    d_proj_seeds_series = []
     # ------------------------------------------------------------------
     # 9. ROLLING WINDOW LOOP
     # ------------------------------------------------------------------
@@ -408,12 +466,20 @@ def run_ipca_grass_v2(
             shrinkage   = shrinkage,
         )
 
+        # W_t, f_tr, _ = est.fit(
+        #     data           = [rets_tr, Z_tr],
+        #     optimizer      = "ConjugateGradient",
+        #     max_iterations = 50, # reduce for faster backtest; increase for more accurate convergence diagnostics
+        #     verbosity      = 0,
+        #     log_verbosity  = 0,
+        # )
         W_t, f_tr, _ = est.fit(
             data           = [rets_tr, Z_tr],
             optimizer      = "ConjugateGradient",
-            max_iterations = 50, # reduce for faster backtest; increase for more accurate convergence diagnostics
+            max_iterations = 200,
             verbosity      = 0,
             log_verbosity  = 0,
+            initial_point  = W_prev if W_prev is not None else None, # warm-start from previous window's solution to compare d_proj better
         )
         # W_t  : (m, k) orthonormal — a point on Gr(m, k)
         # f_tr : (window_len, k) — in-window factor returns
@@ -450,6 +516,67 @@ def run_ipca_grass_v2(
             # ==========================================================
             angles = _principal_angles(W_t, W_prev)   # (k,) descending
             principal_angles_series.append(angles)
+
+            # ==============================================================
+            # METRIC 6 (NEW): Normalised d_proj
+            # --------------------------------------------------------------
+            # d_proj_norm = d_proj / d_proj_random_baseline
+            # Baseline = sqrt(2k(m-k)/(m+1)) is the expected d_proj between
+            # two Haar-uniform random points on Gr(m,k).
+            #
+            # Removing the ambient-dimension effect makes d_proj comparable
+            # across different P (RFF feature) values. Without this, d_proj
+            # grows toward sqrt(2k) purely because m=P is large, even when
+            # the warm-started solution is genuinely stable.
+            #
+            # Interpretation:
+            #   near 0 → genuine subspace stability (warm-start barely moved)
+            #   near 1 → as unstable as independent random draws
+            #   >> 1   → numerical instability
+            # ==============================================================
+            d_proj_norm = d_proj / d_proj_random_baseline if d_proj_random_baseline > 0 else np.nan
+            d_proj_norm_series.append(float(d_proj_norm))
+
+        # ==============================================================
+        # METRIC 7 (NEW): Between-seed d_proj
+        # --------------------------------------------------------------
+        # Fit a second solution from a fresh random initialisation
+        # (no warm-start) and compute d_proj between this random solution
+        # and the warm-started solution W_t.
+        #
+        # This directly operationalises Theorem 6.1(i):
+        #   Flat Hessian (k > k0, z=0): the loss landscape has no curvature
+        #   along noise directions, so a random init lands in a completely
+        #   different basin → large d_proj_seeds (near sqrt(2k)).
+        #
+        #   Curved Hessian (z=10, k~k0): regularisation creates a well-
+        #   defined basin; random and warm inits both find it → small
+        #   d_proj_seeds.
+        #
+        # Unlike Metric 1, this test is INDEPENDENT of the rolling-window
+        # design: each window is self-contained and the comparison is
+        # between two solutions on the same data with different starts.
+        # ==============================================================
+        if compute_seed_variance:
+            est_rand = GrassmannManifoldIPCAEstimator(
+                num_assets  = N,
+                num_fact    = num_fact,
+                num_charact = m_dim,
+                win_len     = rets_tr.shape[0],
+                shrinkage   = shrinkage,
+            )
+            W_t_rand, _, _ = est_rand.fit(
+                data           = [rets_tr, Z_tr],
+                optimizer      = "ConjugateGradient",
+                max_iterations = 200,
+                verbosity      = 0,
+                log_verbosity  = 0,
+                initial_point  = None,   # fresh random init — intentional
+            )
+            P_ws   = W_t      @ W_t.T       # warm-start projection
+            P_rand = W_t_rand @ W_t_rand.T  # random-init projection
+            d_seeds = float(np.linalg.norm(P_ws - P_rand, "fro"))
+            d_proj_seeds_series.append(d_seeds)
 
         W_prev = W_t
 
@@ -581,43 +708,74 @@ def run_ipca_grass_v2(
         float(np.mean(spectral_gap_series)) if spectral_gap_series else np.nan
     )
 
+    # ── Metric 6 aggregate: normalised d_proj ─────────────────────────
+    mean_d_proj_norm = (
+        float(np.mean(d_proj_norm_series)) if d_proj_norm_series else np.nan
+    )
+
+    # ── Metric 7 aggregate: between-seed d_proj ───────────────────────
+    mean_d_proj_seeds = (
+        float(np.mean(d_proj_seeds_series)) if d_proj_seeds_series else np.nan
+    )
+    # Fraction of windows where seeds landed far apart (> 50% of max).
+    # High fraction → Hessian is flat in many windows → illusory regime.
+    d_proj_seeds_flat_frac = (
+        float(np.mean(
+            np.array(d_proj_seeds_series) > 0.5 * np.sqrt(2 * num_fact)
+        )) if d_proj_seeds_series else np.nan
+    )
+
     # ------------------------------------------------------------------
     # 12. PRINT SUMMARY
     # ------------------------------------------------------------------
-    print("=" * 65)
-    print("  Grassmann-IPCA Backtest Results")
-    print("=" * 65)
+    if verbose:
+        print("=" * 65)
+        print("  Grassmann-IPCA Backtest Results")
+        print("=" * 65)
 
-    print("\n── Performance ──────────────────────────────────────────────")
-    print(f"  OOS MSE                              : {mse_oos:.6e}")
-    print(f"  OOS R²                               : {r2_oos:.4f}")
-    print(f"  Market-timing Sharpe (annualised)    : {sharpe:.3f}")
+        print("\n── Performance ──────────────────────────────────────────────")
+        print(f"  OOS MSE                              : {mse_oos:.6e}")
+        print(f"  OOS R²                               : {r2_oos:.4f}")
+        print(f"  Market-timing Sharpe (annualised)    : {sharpe:.3f}")
 
-    print("\n── Metric 1 : Projection distance d_proj ────────────────────")
-    print(f"  Mean d_proj                          : {mean_stability:.4f}"
-          "  (lower = more stable)")
+        print("\n── Metric 1 : Projection distance d_proj ────────────────────")
+        print(f"  Mean d_proj                          : {mean_stability:.4f}"
+              "  (lower = more stable)")
 
-    print("\n── Metric 2 : Principal angles (NEW) ────────────────────────")
-    print(f"  Mean max angle   (rad)               : {mean_max_principal_angle:.4f}"
-          "  (worst-case dir drift; 0 = stable)")
-    print(f"  Mean mean angle  (rad)               : {mean_mean_principal_angle:.4f}"
-          "  (avg dir drift; 0 = stable)")
+        print("\n── Metric 2 : Principal angles (NEW) ────────────────────────")
+        print(f"  Mean max angle   (rad)               : {mean_max_principal_angle:.4f}"
+              "  (worst-case dir drift; 0 = stable)")
+        print(f"  Mean mean angle  (rad)               : {mean_mean_principal_angle:.4f}"
+              "  (avg dir drift; 0 = stable)")
 
-    print("\n── Metric 3 : Geodesic acceleration (NEW) ───────────────────")
-    print(f"  Mean |Δd_proj|                       : {mean_geodesic_accel:.4f}"
-          "  (near 0 = converging subspace)")
+        print("\n── Metric 3 : Geodesic acceleration (NEW) ───────────────────")
+        print(f"  Mean |Δd_proj|                       : {mean_geodesic_accel:.4f}"
+              "  (near 0 = converging subspace)")
 
-    print("\n── Metric 4 : Effective rank erank(Σ̂_f) ────────────────────")
-    print(f"  Mean erank                           : {mean_erank:.4f}"
-          f"  (max = {num_fact})")
-    print(f"  erank collapse fraction              : {erank_collapse_frac:.4f}"
-          "  (fraction of windows erank < k/2)")
+        print("\n── Metric 4 : Effective rank erank(Σ̂_f) ────────────────────")
+        print(f"  Mean erank                           : {mean_erank:.4f}"
+              f"  (max = {num_fact})")
+        print(f"  erank collapse fraction              : {erank_collapse_frac:.4f}"
+              "  (fraction of windows erank < k/2)")
 
-    print("\n── Metric 5 : Spectral gap ratio (NEW) ──────────────────────")
-    print(f"  Mean gap_ratio                       : {mean_spectral_gap:.4f}"
-          "  (1 = clean signal/noise sep; 0 = last factor on noise floor)")
+        print("\n── Metric 5 : Spectral gap ratio (NEW) ──────────────────────")
+        print(f"  Mean gap_ratio                       : {mean_spectral_gap:.4f}"
+              "  (1 = clean signal/noise sep; 0 = last factor on noise floor)")
 
-    print("=" * 65)
+        print("\n── Metric 6 : Normalised d_proj (NEW) ───────────────────────")
+        print(f"  Random baseline                      : {d_proj_random_baseline:.4f}"
+              f"  (expected d_proj for 2 Haar-random pts on Gr({m_dim},{num_fact}))")
+        print(f"  Mean d_proj_norm                     : {mean_d_proj_norm:.4f}"
+              "  (0=stable, 1=as unstable as random)")
+
+        if compute_seed_variance:
+            print("\n── Metric 7 : Between-seed d_proj (NEW) ─────────────────────")
+            print(f"  Mean d_proj (warm vs random init)    : {mean_d_proj_seeds:.4f}"
+                  f"  (max = {np.sqrt(2*num_fact):.4f})")
+            print(f"  Flat-Hessian fraction                : {d_proj_seeds_flat_frac:.4f}"
+                  "  (frac windows where seeds landed > 50pct of max apart)")
+
+        print("=" * 65)
 
     # ------------------------------------------------------------------
     # 13. RETURN FULL RESULTS DICT
@@ -648,4 +806,18 @@ def run_ipca_grass_v2(
         # ── Metric 5: Spectral gap ratio (NEW) ────────────────────────
         "mean_spectral_gap"    : mean_spectral_gap,
         "spectral_gap_series"  : spectral_gap_series,
+
+        # ── Metric 6: Normalised d_proj (NEW) ─────────────────────────
+        # d_proj / sqrt(2k(m-k)/(m+1)) removes ambient-dimension effect.
+        # Enables valid cross-P comparisons of subspace stability.
+        "mean_d_proj_norm"        : mean_d_proj_norm,
+        "d_proj_norm_series"      : d_proj_norm_series,
+        "d_proj_random_baseline"  : d_proj_random_baseline,
+
+        # ── Metric 7: Between-seed d_proj (NEW) ───────────────────────
+        # d_proj between warm-start and fresh-random solution per window.
+        # Direct test of Theorem 6.1(i): flat Hessian → large d_proj_seeds.
+        "mean_d_proj_seeds"       : mean_d_proj_seeds,
+        "d_proj_seeds_series"     : d_proj_seeds_series,
+        "d_proj_seeds_flat_frac"  : d_proj_seeds_flat_frac,
     }
