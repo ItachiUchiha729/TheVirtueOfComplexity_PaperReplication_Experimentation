@@ -193,11 +193,17 @@ def build_jobs(
 
     DataFrames are pre-serialised to numpy arrays to avoid pandas pickle issues.
     """
+    # Pre-serialise payloads once per unique (n_feat, seed) to avoid
+    # redundant copies when multiple (k, z) jobs share the same data.
+    payloads = {
+        key: _df_to_payload(df_rff, rff_cols)
+        for key, (df_rff, rff_cols) in rff_inputs.items()
+    }
+
     jobs = []
     for num_fact, n_feat, z, seed in itertools.product(
         num_factors_list, n_features_rff, z_values, range(num_iter_rff)
     ):
-        df_rff, rff_cols = rff_inputs[(n_feat, seed)]
         jobs.append({
             "num_fact"   : num_fact,
             "n_feat"     : n_feat,
@@ -205,7 +211,7 @@ def build_jobs(
             "z_label"    : _z_label(z),
             "seed"       : seed,
             "window_len" : window_len,
-            "df_payload" : _df_to_payload(df_rff, rff_cols),  # numpy, not DataFrame
+            "df_payload" : payloads[(n_feat, seed)],
         })
 
     # LPT: sort descending by estimated cost so slow jobs start first

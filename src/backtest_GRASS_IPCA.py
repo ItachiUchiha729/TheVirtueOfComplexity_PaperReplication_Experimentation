@@ -497,25 +497,21 @@ def run_ipca_grass_v2(
         #   High → rotating noise dirs  → illusory complexity signal
         # ==============================================================
         if W_prev is not None:
-            P_curr = W_t   @ W_t.T     # (m, m) projection, current window
-            P_prev = W_prev @ W_prev.T  # (m, m) projection, previous window
-            d_proj = np.linalg.norm(P_curr - P_prev, "fro")
-            stability_dists.append(d_proj)
-
             # ==========================================================
-            # METRIC 2 (NEW): Principal angles between V_t and V_{t-1}
+            # METRIC 2: Principal angles between V_t and V_{t-1}
             # ----------------------------------------------------------
-            # Principal angles strictly generalise d_proj:
+            # Computed FIRST because d_proj is derived from angles:
             #   d_proj² = 2 Σᵢ sin²(θᵢ)
-            # The *max* angle reveals the single worst-drifting factor
-            # direction; the *mean* gives an average-case view.
-            #
-            # Interpretation:
-            #   All angles near 0   → all factor dirs very stable
-            #   Max angle near π/2  → one factor dir is noise/spin
+            # This avoids forming two (P × P) projection matrices,
+            # reducing O(P²k) to O(Pk² + k³).  For P=4096, k=24 this
+            # is ~170× fewer FLOPs.
             # ==========================================================
-            angles = _principal_angles(W_t, W_prev)   # (k,) descending
+            angles = _principal_angles(W_t, W_prev)   # (k,) descending, O(Pk² + k³)
             principal_angles_series.append(angles)
+
+            # METRIC 1: Projection distance — derived from principal angles
+            d_proj = float(np.sqrt(2.0 * np.sum(np.sin(angles) ** 2)))
+            stability_dists.append(d_proj)
 
             # ==============================================================
             # METRIC 6 (NEW): Normalised d_proj
@@ -573,9 +569,11 @@ def run_ipca_grass_v2(
                 log_verbosity  = 0,
                 initial_point  = None,   # fresh random init — intentional
             )
-            P_ws   = W_t      @ W_t.T       # warm-start projection
-            P_rand = W_t_rand @ W_t_rand.T  # random-init projection
-            d_seeds = float(np.linalg.norm(P_ws - P_rand, "fro"))
+            # d_proj between warm-start and random-init via k×k Gram
+            # matrix — avoids forming two (P × P) projections.
+            # Identity: ‖P_a − P_b‖²_F = 2(k − ‖W_aᵀ W_b‖²_F)
+            M_seeds = W_t.T @ W_t_rand        # (k, k)  O(Pk²)
+            d_seeds = float(np.sqrt(max(0.0, 2.0 * (num_fact - np.sum(M_seeds ** 2)))))
             d_proj_seeds_series.append(d_seeds)
 
         W_prev = W_t
