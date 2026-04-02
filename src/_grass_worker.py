@@ -10,8 +10,18 @@ All sweep logic that cannot live in a notebook cell:
   - aggregate       : buckets raw results → results_by_factor_rff dict
   - make_results_df : converts aggregated dict → MultiIndex summary DataFrame
 
+  Market-cap-weighted variants (mktcap Sharpe):
+  - build_rff_inputs_mktcap : same as build_rff_inputs but carries "mktcap" column
+  - build_jobs_mktcap       : serialises mktcap in payload
+  - _run_one_mktcap         : calls run_ipca_grass_mktcap
+  - aggregate_mktcap        : like aggregate but also averages sharpe_mktcap
+  - make_results_df_mktcap  : like make_results_df but adds avg_sharpe_mktcap col
+
 Usage from the notebook cell:
     from _grass_worker import run_sweep, make_results_df, Z_VALUES, _z_label
+    # mktcap variants:
+    from _grass_worker import (build_rff_inputs_mktcap, build_jobs_mktcap,
+                                run_sweep, aggregate_mktcap, make_results_df_mktcap)
 """
 
 import os
@@ -23,6 +33,11 @@ import pandas as pd
 from joblib import Parallel, delayed
 
 from backtest_GRASS_IPCA import run_ipca_grass_v2
+
+try:
+    from backtest_GRASS_IPCA_mktcap import run_ipca_grass_mktcap
+except ModuleNotFoundError:
+    from src.backtest_GRASS_IPCA_mktcap import run_ipca_grass_mktcap
 
 # ---------------------------------------------------------------------------
 # Thread-count caps — set before any numpy import in spawned workers
@@ -75,15 +90,16 @@ def _run_one(job: dict) -> dict:
     rff_cols  = job["df_payload"]["rff_cols"]
 
     res = run_ipca_grass_v2(
-        df_trunc         = df_trunc,
-        char_feats       = rff_cols,
-        num_fact         = job["num_fact"],
-        verbose          = job.get("verbose", False),
-        window_len       = job["window_len"],
-        max_nan          = 0.3,
-        max_zero         = 0.3,
-        min_non_nan_frac = 0.7,
-        shrinkage        = job["shrinkage"],
+        df_trunc          = df_trunc,
+        char_feats        = rff_cols,
+        num_fact          = job["num_fact"],
+        verbose           = job.get("verbose", False),
+        window_len        = job["window_len"],
+        max_nan           = 0.3,
+        max_zero          = 0.3,
+        min_non_nan_frac  = 0.7,
+        shrinkage         = job["shrinkage"],
+        min_gradient_norm = job.get("min_gradient_norm", 1e-6),
     )
     res["_num_fact"]  = job["num_fact"]
     res["_n_feat"]    = job["n_feat"]
@@ -181,6 +197,7 @@ def build_jobs(
     z_values,
     num_iter_rff,
     window_len,
+    min_gradient_norm: float = 1e-6,
 ):
     """
     Returns the full Cartesian (k, P, z, seed) job list, sorted longest-first.
@@ -205,13 +222,14 @@ def build_jobs(
         num_factors_list, n_features_rff, z_values, range(num_iter_rff)
     ):
         jobs.append({
-            "num_fact"   : num_fact,
-            "n_feat"     : n_feat,
-            "shrinkage"  : z,
-            "z_label"    : _z_label(z),
-            "seed"       : seed,
-            "window_len" : window_len,
-            "df_payload" : payloads[(n_feat, seed)],
+            "num_fact"          : num_fact,
+            "n_feat"            : n_feat,
+            "shrinkage"         : z,
+            "z_label"           : _z_label(z),
+            "seed"              : seed,
+            "window_len"        : window_len,
+            "min_gradient_norm" : min_gradient_norm,
+            "df_payload"        : payloads[(n_feat, seed)],
         })
 
     # LPT: sort descending by estimated cost so slow jobs start first
@@ -289,6 +307,31 @@ def run_sweep(jobs, n_workers=None, verbose=False):
     )(delayed(_run_one)(j) for j in jobs)
 
 
+def run_sweep_mktcap(jobs, n_workers=None, verbose=False):
+    """
+    Identical to run_sweep but dispatches _run_one_mktcap instead of
+    _run_one.  Use with job lists built by build_jobs_mktcap().
+    """
+    if n_workers is None:
+        n_workers = _optimal_workers(jobs)
+
+    if verbose:
+        n_jobs_total = len(jobs)
+        cost_range   = (
+            f"cost range {_job_cost(jobs[-1]):.0f}–{_job_cost(jobs[0]):.0f}"
+            if jobs else ""
+        )
+        print(f"Dispatching {n_jobs_total} jobs across {n_workers} workers "
+              f"({cost_range}, LPT order) [mktcap-weighted] ...")
+
+    return Parallel(
+        n_jobs       = n_workers,
+        backend      = "loky",
+        verbose      = 10 if verbose else 0,
+        pre_dispatch = "all",
+    )(delayed(_run_one_mktcap)(j) for j in jobs)
+
+
 # ===========================================================================
 # STEP 4 — AGGREGATE
 # ===========================================================================
@@ -334,6 +377,210 @@ def make_results_df(results_by_factor_rff):
     """
     scalar_rows = {
         k: {col: v for col, v in v_dict.items() if col in SCALAR_COLS}
+        for k, v_dict in results_by_factor_rff.items()
+    }
+    df = pd.DataFrame(scalar_rows).T
+    df.index = pd.MultiIndex.from_tuples(df.index, names=["k", "P", "z"])
+    return df.sort_index()
+
+
+# ===========================================================================
+# MKTCAP-WEIGHTED VARIANTS
+# ===========================================================================
+#
+# These mirror the functions above but wire through run_ipca_grass_mktcap
+# instead of run_ipca_grass_v2.  The only data-level change is that
+# build_rff_inputs_mktcap requires df_base to contain a "mktcap" column
+# (raw CRSP market equity: ABS(prc) * shrout / 1000, in millions).
+#
+# The mktcap column is carried through the serialised payload so spawned
+# worker processes can access it without passing large objects over the
+# pickling boundary more than once per (n_feat, seed) pair.
+#
+# Typical notebook usage:
+#
+#   # 0. Add mktcap to df (join CRSP msf query result)
+#   df["mktcap"] = df_me_aligned["mktcap"]   # raw ABS(prc)*shrout/1000
+#
+#   # 1. Pre-compute RFF inputs (now carries mktcap)
+#   rff_inputs = build_rff_inputs_mktcap(
+#       X_chars=X_chars, df_base=df,
+#       n_features_rff=N_FEATURES_RFF, num_iter_rff=NUM_ITER_RFF,
+#       gamma=GAMMA, RandomFourierFeatures=RandomFourierFeatures,
+#   )
+#
+#   # 2-4. Build jobs, run sweep, aggregate — run_sweep is unchanged
+#   jobs        = build_jobs_mktcap(rff_inputs, ...)
+#   raw_results = run_sweep(jobs)           # identical dispatcher
+#   summary     = aggregate_mktcap(raw_results)
+#   df_results  = make_results_df_mktcap(summary)
+# ---------------------------------------------------------------------------
+
+SCALAR_COLS_MKTCAP = SCALAR_COLS + ["avg_sharpe_mktcap"]
+
+
+def build_rff_inputs_mktcap(
+    X_chars,
+    df_base,
+    n_features_rff,
+    num_iter_rff,
+    gamma,
+    RandomFourierFeatures,
+):
+    """
+    Same as build_rff_inputs but includes the ``"mktcap"`` column so it is
+    available inside the backtester for value-weighted portfolio construction.
+
+    Parameters
+    ----------
+    (all identical to build_rff_inputs)
+    df_base : pd.DataFrame
+        Must contain ``"Price"``, ``"ret"``, **and** ``"mktcap"`` columns.
+        ``mktcap`` should be raw CRSP market equity (ABS(prc)*shrout/1000,
+        in millions) — **not** the cross-sectionally normalised "Size"
+        characteristic.
+    """
+    rff_inputs = {}
+
+    for n_feat, seed in itertools.product(n_features_rff, range(num_iter_rff)):
+        rff      = RandomFourierFeatures(n_features=int(n_feat / 2), gamma=gamma)
+        rff_data = rff.transform(X_chars, seed=seed)
+        rff_cols = [f"rff_{j+1}" for j in range(rff_data.shape[1])]
+        rff_df   = pd.DataFrame(rff_data, index=df_base.index, columns=rff_cols)
+        df_rff   = (
+            pd.concat([df_base[["Price", "ret", "mktcap"]], rff_df], axis=1)
+            .dropna(subset=["ret"])
+        )
+        rff_inputs[(n_feat, seed)] = (df_rff, rff_cols)
+
+    return rff_inputs
+
+
+def _df_to_payload_mktcap(df, rff_cols):
+    """
+    Serialise a mktcap-augmented df_rff as plain numpy arrays.
+    Identical to _df_to_payload but includes "mktcap" in the column list.
+    """
+    all_cols = ["Price", "ret", "mktcap"] + list(rff_cols)
+    return {
+        "values"   : df[all_cols].to_numpy(dtype=float, na_value=float("nan")),
+        "index"    : df.index,
+        "all_cols" : all_cols,
+        "rff_cols" : list(rff_cols),
+    }
+
+
+def _run_one_mktcap(job: dict) -> dict:
+    """
+    Single mktcap-weighted backtest run.
+    Drop-in replacement for _run_one that calls run_ipca_grass_mktcap.
+    """
+    os.environ["OMP_NUM_THREADS"]      = "1"
+    os.environ["OPENBLAS_NUM_THREADS"] = "1"
+    os.environ["MKL_NUM_THREADS"]      = "1"
+
+    df_trunc  = _payload_to_df(job["df_payload"])   # _payload_to_df works unchanged
+    rff_cols  = job["df_payload"]["rff_cols"]
+
+    res = run_ipca_grass_mktcap(
+        df_trunc          = df_trunc,
+        char_feats        = rff_cols,
+        num_fact          = job["num_fact"],
+        verbose           = job.get("verbose", False),
+        window_len        = job["window_len"],
+        max_nan           = 0.3,
+        max_zero          = 0.3,
+        min_non_nan_frac  = 0.7,
+        shrinkage         = job["shrinkage"],
+        min_gradient_norm = job.get("min_gradient_norm", 1e-6),
+    )
+    res["_num_fact"]  = job["num_fact"]
+    res["_n_feat"]    = job["n_feat"]
+    res["_shrinkage"] = job["shrinkage"]
+    res["_z_label"]   = job["z_label"]
+    res["_seed"]      = job["seed"]
+    return res
+
+
+def build_jobs_mktcap(
+    rff_inputs,
+    num_factors_list,
+    n_features_rff,
+    z_values,
+    num_iter_rff,
+    window_len,
+    min_gradient_norm: float = 1e-6,
+):
+    """
+    Same as build_jobs but serialises payloads with _df_to_payload_mktcap
+    (includes the mktcap column) and tags jobs so run_sweep dispatches
+    _run_one_mktcap instead of _run_one.
+
+    Pass the returned job list to the standard run_sweep — it will call
+    ``job["worker_fn"](job)`` if present, falling back to _run_one.
+    """
+    payloads = {
+        key: _df_to_payload_mktcap(df_rff, rff_cols)
+        for key, (df_rff, rff_cols) in rff_inputs.items()
+    }
+
+    jobs = []
+    for num_fact, n_feat, z, seed in itertools.product(
+        num_factors_list, n_features_rff, z_values, range(num_iter_rff)
+    ):
+        jobs.append({
+            "num_fact"          : num_fact,
+            "n_feat"            : n_feat,
+            "shrinkage"         : z,
+            "z_label"           : _z_label(z),
+            "seed"              : seed,
+            "window_len"        : window_len,
+            "min_gradient_norm" : min_gradient_norm,
+            "df_payload"        : payloads[(n_feat, seed)],
+        })
+
+    jobs.sort(key=_job_cost, reverse=True)
+    return jobs
+
+
+def aggregate_mktcap(raw_results):
+    """
+    Like aggregate() but also averages ``sharpe_mktcap`` across seeds.
+    Returns a dict with the same structure as aggregate(), with an extra
+    ``avg_sharpe_mktcap`` key per (k, P, z) bucket.
+    """
+    buckets = defaultdict(list)
+    for r in raw_results:
+        buckets[(r["_num_fact"], r["_n_feat"], r["_z_label"])].append(r)
+
+    out = {}
+    for (num_fact, n_feat, z), runs in buckets.items():
+        out[(num_fact, n_feat, z)] = {
+            "avg_r2_oos"               : np.mean([r["r2_oos"]                    for r in runs]),
+            "avg_sharpe"               : np.mean([r["sharpe_ew"]                 for r in runs]),
+            "avg_sharpe_mktcap"        : np.mean([r["sharpe_mktcap"]             for r in runs]),
+            "avg_subspace_stability"   : np.mean([r["mean_subspace_stability"]   for r in runs]),
+            "avg_max_principal_angle"  : np.mean([r["mean_max_principal_angle"]  for r in runs]),
+            "avg_mean_principal_angle" : np.mean([r["mean_mean_principal_angle"] for r in runs]),
+            "avg_geodesic_accel"       : np.mean([r["mean_geodesic_accel"]       for r in runs]),
+            "avg_erank"                : np.mean([r["mean_erank"]                for r in runs]),
+            "avg_erank_collapse"       : np.mean([r["erank_collapse_frac"]       for r in runs]),
+            "avg_spectral_gap"         : np.mean([r["mean_spectral_gap"]         for r in runs]),
+            "stability_dist_series"    : [r["stability_dist_series"]             for r in runs],
+            "principal_angles_series"  : [r["principal_angles_series"]           for r in runs],
+            "geodesic_accel_series"    : [r["geodesic_accel_series"]             for r in runs],
+            "erank_series"             : [r["erank_series"]                      for r in runs],
+            "spectral_gap_series"      : [r["spectral_gap_series"]               for r in runs],
+        }
+    return out
+
+
+def make_results_df_mktcap(results_by_factor_rff):
+    """
+    Like make_results_df() but includes the ``avg_sharpe_mktcap`` column.
+    """
+    scalar_rows = {
+        k: {col: v for col, v in v_dict.items() if col in SCALAR_COLS_MKTCAP}
         for k, v_dict in results_by_factor_rff.items()
     }
     df = pd.DataFrame(scalar_rows).T

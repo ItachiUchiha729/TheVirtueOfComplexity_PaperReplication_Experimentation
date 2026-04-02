@@ -195,6 +195,7 @@ def run_ipca_grass_v2(
     max_zero: float = 0.3,
     min_non_nan_frac: float = 0.7,
     shrinkage: float = 0.0,
+    min_gradient_norm: float = 1e-6,
     compute_seed_variance: bool = True,
     verbose: bool = True,
 ) -> dict:
@@ -474,12 +475,13 @@ def run_ipca_grass_v2(
         #     log_verbosity  = 0,
         # )
         W_t, f_tr, _ = est.fit(
-            data           = [rets_tr, Z_tr],
-            optimizer      = "ConjugateGradient",
-            max_iterations = 200,
-            verbosity      = 0,
-            log_verbosity  = 0,
-            initial_point  = W_prev if W_prev is not None else None, # warm-start from previous window's solution to compare d_proj better
+            data              = [rets_tr, Z_tr],
+            optimizer         = "ConjugateGradient",
+            max_iterations    = 200,
+            min_gradient_norm = min_gradient_norm,
+            verbosity         = 0,
+            log_verbosity     = 0,
+            initial_point     = W_prev if W_prev is not None else None, # warm-start from previous window's solution to compare d_proj better
         )
         # W_t  : (m, k) orthonormal — a point on Gr(m, k)
         # f_tr : (window_len, k) — in-window factor returns
@@ -562,12 +564,13 @@ def run_ipca_grass_v2(
                 shrinkage   = shrinkage,
             )
             W_t_rand, _, _ = est_rand.fit(
-                data           = [rets_tr, Z_tr],
-                optimizer      = "ConjugateGradient",
-                max_iterations = 200,
-                verbosity      = 0,
-                log_verbosity  = 0,
-                initial_point  = None,   # fresh random init — intentional
+                data              = [rets_tr, Z_tr],
+                optimizer         = "ConjugateGradient",
+                max_iterations    = 200,
+                min_gradient_norm = min_gradient_norm,
+                verbosity         = 0,
+                log_verbosity     = 0,
+                initial_point     = None,   # fresh random init — intentional
             )
             # d_proj between warm-start and random-init via k×k Gram
             # matrix — avoids forming two (P × P) projections.

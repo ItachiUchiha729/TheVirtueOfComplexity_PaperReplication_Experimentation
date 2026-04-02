@@ -203,8 +203,8 @@ class GrassmannManifoldIPCAEstimator:
         Lt      = L.transpose(0, 2, 1)                   # (T, k, N)
         LtL     = Lt @ L                                  # (T, k, k)
         LtL_reg = LtL + z * np.eye(k)                    # (T, k, k)
-        Ltr     = (Lt @ rets[..., None]).squeeze(-1)      # (T, k)
-        f_hat   = np.linalg.solve(LtL_reg, Ltr)          # (T, k)
+        Ltr     = Lt @ rets[..., None]                    # (T, k, 1)
+        f_hat   = np.linalg.solve(LtL_reg, Ltr).squeeze(-1)  # (T, k)
         return f_hat
 
     # ------------------------------------------------------------------
@@ -215,6 +215,7 @@ class GrassmannManifoldIPCAEstimator:
         data,
         optimizer: str = "ConjugateGradient",
         max_iterations: int = 200,
+        min_gradient_norm: float = 1e-6,
         verbosity: int = 1,
         log_verbosity: int = 1,
         initial_point: np.ndarray | None = None,
@@ -275,6 +276,7 @@ class GrassmannManifoldIPCAEstimator:
         if opt in {"cg", "conjugategradient"}:
             solver = ConjugateGradient(
                 max_iterations=max_iterations,
+                min_gradient_norm=min_gradient_norm,
                 verbosity=verbosity,
                 log_verbosity=log_verbosity,
             )
@@ -282,6 +284,7 @@ class GrassmannManifoldIPCAEstimator:
         elif opt in {"sd", "steepestdescent"}:
             solver = SteepestDescent(
                 max_iterations=max_iterations,
+                min_gradient_norm=min_gradient_norm,
                 verbosity=verbosity,
                 log_verbosity=log_verbosity,
             )
@@ -289,6 +292,7 @@ class GrassmannManifoldIPCAEstimator:
         elif opt in {"tr", "trustregions"}:
             solver = TrustRegions(
                 max_iterations=max_iterations,
+                min_gradient_norm=min_gradient_norm,
                 verbosity=verbosity,
                 log_verbosity=log_verbosity,
             )
