@@ -680,9 +680,29 @@ def run_ipca_grass_v2(
 
         mean_max_principal_angle  = float(np.mean(max_angles))
         mean_mean_principal_angle = float(np.mean(mean_angles))
+
+        # ── Metric 2b: Sharpe ratio of principal angles (SR_PA) ───────
+        # SR_PA = E_t[θ̄_t] / Std_t[θ̄_t]  — signal-to-noise of angular
+        # drift.  High SR_PA → consistent, predictable subspace tracking
+        # (virtuous); low SR_PA → erratic wandering in flat Hessian null
+        # space (illusory).  Maps to Theorem 6.1(a,b).
+        std_mean_pa = float(np.std(mean_angles, ddof=1)) if len(mean_angles) > 1 else np.nan
+        std_max_pa  = float(np.std(max_angles, ddof=1))  if len(max_angles) > 1 else np.nan
+        sr_mean_principal_angle = (
+            mean_mean_principal_angle / std_mean_pa
+            if std_mean_pa > 1e-12 else np.nan
+        )
+        sr_max_principal_angle = (
+            mean_max_principal_angle / std_max_pa
+            if std_max_pa > 1e-12 else np.nan
+        )
     else:
         mean_max_principal_angle  = np.nan
         mean_mean_principal_angle = np.nan
+        std_mean_pa = np.nan
+        std_max_pa  = np.nan
+        sr_mean_principal_angle = np.nan
+        sr_max_principal_angle  = np.nan
 
     # ── Metric 3 aggregate: geodesic acceleration ─────────────────────
     # The acceleration is the first-difference of the d_proj series.
@@ -748,6 +768,10 @@ def run_ipca_grass_v2(
               "  (worst-case dir drift; 0 = stable)")
         print(f"  Mean mean angle  (rad)               : {mean_mean_principal_angle:.4f}"
               "  (avg dir drift; 0 = stable)")
+        print(f"  SR of mean principal angle            : {sr_mean_principal_angle:.4f}"
+              "  (high = consistent tracking; low = erratic)")
+        print(f"  SR of max  principal angle            : {sr_max_principal_angle:.4f}"
+              "  (high = consistent tracking; low = erratic)")
 
         print("\n── Metric 3 : Geodesic acceleration (NEW) ───────────────────")
         print(f"  Mean |Δd_proj|                       : {mean_geodesic_accel:.4f}"
@@ -794,6 +818,12 @@ def run_ipca_grass_v2(
         "mean_max_principal_angle"  : mean_max_principal_angle,
         "mean_mean_principal_angle" : mean_mean_principal_angle,
         "principal_angles_series"   : principal_angles_series,
+
+        # ── Metric 2b: Sharpe ratio of principal angles (SR_PA) ───────
+        "std_mean_principal_angle"  : std_mean_pa,
+        "std_max_principal_angle"   : std_max_pa,
+        "sr_mean_principal_angle"   : sr_mean_principal_angle,
+        "sr_max_principal_angle"    : sr_max_principal_angle,
 
         # ── Metric 3: Geodesic acceleration (NEW) ─────────────────────
         "mean_geodesic_accel"   : mean_geodesic_accel,
