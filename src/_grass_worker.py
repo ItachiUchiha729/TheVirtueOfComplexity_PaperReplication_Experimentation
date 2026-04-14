@@ -32,12 +32,27 @@ import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
 
-from backtest_GRASS_IPCA import run_ipca_grass_v2
+try:
+    # Package-context imports (e.g. "from src._grass_worker import ...")
+    from .backtest_GRASS_IPCA import run_ipca_grass_v2
+except ImportError:
+    try:
+        # Absolute package import fallback
+        from src.backtest_GRASS_IPCA import run_ipca_grass_v2
+    except ImportError:
+        # Script-context fallback
+        from backtest_GRASS_IPCA import run_ipca_grass_v2
 
 try:
-    from backtest_GRASS_IPCA_mktcap import run_ipca_grass_mktcap
-except ModuleNotFoundError:
-    from src.backtest_GRASS_IPCA_mktcap import run_ipca_grass_mktcap
+    # Package-context imports (e.g. "from src._grass_worker import ...")
+    from .backtest_GRASS_IPCA_mktcap import run_ipca_grass_mktcap
+except ImportError:
+    try:
+        # Absolute package import fallback
+        from src.backtest_GRASS_IPCA_mktcap import run_ipca_grass_mktcap
+    except ImportError:
+        # Script-context fallback
+        from backtest_GRASS_IPCA_mktcap import run_ipca_grass_mktcap
 
 # ---------------------------------------------------------------------------
 # Thread-count caps — set before any numpy import in spawned workers
