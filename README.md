@@ -74,3 +74,9 @@ To regenerate it yourself (takes multiple hours), delete the file and re-run the
 ## Key Finding
 
 Models with complexity ratio c = P/T >> 1 (more features than observations) achieve superior out-of-sample Sharpe ratios when properly regularized with ridge regression.
+
+
+
+## Notes on final paper(semantics)
+
+Some Figures were regenerated with \tilde m labels, and the CSV+notebook reproduce all numbers. That way anyone who diffs the figures against an old version of the paper sees the explanation immediately.
