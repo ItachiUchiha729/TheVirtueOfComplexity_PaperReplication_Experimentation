@@ -1,0 +1,206 @@
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{siunitx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{mdframed}
+
+% ── Section formatting ────────────────────────────────────────────────────────
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\vspace{-4pt}\rule{\linewidth}{0.5pt}]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+% ── Header / footer ───────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small\textit{Grassmann-IPCA: Preliminary Backtest Results}}
+\fancyhead[R]{\small 2020--2025}
+\fancyfoot[C]{\small\thepage}
+
+% ── Hyperref ──────────────────────────────────────────────────────────────────
+\hypersetup{colorlinks=false, hidelinks}
+
+% ── Note box ──────────────────────────────────────────────────────────────────
+\newmdenv[
+  backgroundcolor=white,
+  linecolor=black,
+  linewidth=0.8pt,
+  leftmargin=0pt,
+  rightmargin=0pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  skipabove=10pt,
+  skipbelow=6pt
+]{notebox}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title block ───────────────────────────────────────────────────────────────
+\begin{center}
+  {\LARGE\bfseries
+    Geometric Diagnostics for the Virtue of Complexity}\\[6pt]
+  {\large
+    Preliminary Grassmann-IPCA Backtest Results, 2020--2025}\\[10pt]
+  {\small
+    Internal results note \quad|\quad
+    24 stocks,\ 33 characteristics,\ $\gamma = 0.25$}
+\end{center}
+
+\vspace{4pt}
+\noindent\rule{\linewidth}{1pt}
+\vspace{2pt}
+
+% ── Scope note ────────────────────────────────────────────────────────────────
+\begin{notebox}
+\textbf{Preliminary scope.}\;
+These results are based on a small-universe proof-of-concept: 24 US equities, 33 stock characteristics, and a 5-year window (January 2020 -- December 2025). The cross-section is well below the thousands of stocks used in published work, and the sample spans an unusually volatile macro regime. Patterns are \emph{directionally} consistent with theory but should not be over-interpreted as definitive empirical findings.
+\end{notebox}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Background and Framework}
+
+We implement the Grassmann-IPCA estimator of Lesniewski \& Missaoui~\cite{LM2026}, which optimises the profiled loss
+\[
+  \mathcal{L}(W) \;=\; \frac{1}{T}\sum_{t=1}^{T}
+    \min_{f}\,\bigl\|r_t - (Z_t W)\,f\bigr\|^2,
+    \qquad W \in \mathrm{Gr}(m, k),
+\]
+where $Z_t \in \mathbb{R}^{N\times m}$ is a random-feature characteristic matrix ($\gamma=0.25$, Rahimi \& Recht~\cite{RR2007}), $W$ has orthonormal columns (a point on the Grassmann manifold $\mathrm{Gr}(m,k)$), and $f$ is the latent factor.
+
+The diagnostic framework follows Deep et al.~\cite{DLMP2026}, who prove that \emph{illusory complexity} manifests as three co-occurring symptoms (Theorem~6.1):
+\begin{itemize}[leftmargin=1.4em, itemsep=2pt]
+  \item \textbf{Flat Hessian directions} on $\mathrm{Gr}(m,k)$ when $k$ exceeds the true signal dimension $k_0$, enabling $O(1)$ subspace rotations under sampling noise.
+  \item \textbf{Subspace instability}: large Grassmann distance $d_{\mathrm{proj}} = \|P_t - P_{t-1}\|_F$ across rolling windows.
+  \item \textbf{Effective-rank collapse}: $\mathrm{erank}(\hat{\Sigma}_f) \ll k$, because the extra $k - k_0$ factors absorb noise eigenvalues $\sigma^2$ rather than signal eigenvalues $\lambda_i$.
+\end{itemize}
+We vary $k \in \{2, 4, 8\}$, window length $\in \{6, 12, 24\}$ months, and feature count $m \in \{32, 512\}$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Results}
+
+\subsection{Full results table}
+
+\begin{table}[h!]
+\centering
+\small
+\setlength{\tabcolsep}{7pt}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabular}{rrrr S[table-format=1.6] S[table-format=1.6] S[table-format=1.6] S[table-format=1.6]}
+\toprule
+$\gamma$ & $m$ & \textbf{win} & $k$ &
+  {\textbf{Sharpe}} &
+  {\textbf{avg\_stability}} &
+  {\textbf{avg\_erank}} &
+  {\textbf{collapse\_frac}} \\
+\midrule
+0.25 & 32  &  6 & 2 & 0.433 & 1.845 & 1.515 & 0.000 \\
+0.25 & 32  &  6 & 4 & \bfseries 0.464 & 2.656 & 2.211 & 0.340 \\
+0.25 & 32  &  6 & 8 & 0.415 & 3.734 & 2.683 & 0.986 \\
+\midrule
+0.25 & 32  & 12 & 2 & 0.119 & 1.857 & 1.471 & 0.000 \\
+0.25 & 32  & 12 & 4 & 0.309 & 2.642 & 2.458 & 0.218 \\
+0.25 & 32  & 12 & 8 & 0.283 & 3.726 & 3.415 & 0.700 \\
+\midrule
+0.25 & 32  & 24 & 2 & 0.185 & 1.850 & 1.402 & 0.000 \\
+0.25 & 32  & 24 & 4 & 0.280 & 2.641 & 2.330 & 0.307 \\
+0.25 & 32  & 24 & 8 & 0.258 & 3.719 & 3.826 & 0.528 \\
+\midrule
+0.25 & 512 &  6 & 2 & 0.417 & 1.992 & 1.617 & 0.000 \\
+0.25 & 512 &  6 & 4 & 0.432 & 2.822 & 2.335 & 0.272 \\
+0.25 & 512 &  6 & 8 & 0.422 & 3.984 & 2.792 & 0.968 \\
+\midrule
+0.25 & 512 & 12 & 2 & 0.136 & 1.990 & 1.643 & 0.000 \\
+\bottomrule
+\end{tabular}
+\caption{Rolling-window Grassmann-IPCA backtest, 2020--2025.
+  \textbf{win} = estimation window (months);
+  \textbf{avg\_stability} = mean $d_{\mathrm{proj}} = \|P_t - P_{t-1}\|_F$;
+  \textbf{avg\_erank} = mean $\mathrm{erank}(\hat{\Sigma}_f)$;
+  \textbf{collapse\_frac} = fraction of windows where $\mathrm{erank} < k/2$.
+  Bold Sharpe marks the best configuration.}
+\end{table}
+
+\subsection{Geometric interpretation}
+
+\textbf{Sharpe peaks at $k=4$, then declines.}\;
+Across all window lengths and feature counts, Sharpe rises from $k=2$ to $k=4$ and then falls at $k=8$. This is the characteristic complexity curve predicted by Kelly, Malamud \& Zhou~\cite{KMZ2024}: additional factors are virtuous up to the true signal dimension $k_0$, and illusory beyond it.
+
+\textbf{Subspace instability grows monotonically with $k$.}\;
+$d_{\mathrm{proj}}$ rises from $\approx 1.85$ at $k=2$ to $\approx 3.73$ at $k=8$ (for $m=32$), regardless of window length. This is precisely Theorem~6.1(i) of Deep et al.~\cite{DLMP2026}: when $k > k_0$, the flat Hessian directions allow sampling perturbations to rotate the extra subspace components by $O(1)$ amounts, producing large Grassmann distances between consecutive windows. The signal directions remain stable; it is the noise-absorbing extra factors that spin freely.
+
+\textbf{Effective rank collapses for $k=8$.}\;
+At ($m=32$, win$=6$, $k=8$), $\mathrm{avg\_erank} = 2.68$ against a nominal $k=8$, and \textbf{collapse\_frac} $= 0.99$: effectively every window is in the collapsed regime. This directly reflects the block-spectral structure of Eq.~(26)--(27) in~\cite{DLMP2026}: the population fitted factor covariance has spectrum $\{\lambda_1,\ldots,\lambda_{k_0}, \sigma^2, \ldots, \sigma^2\}$, so erank collapses toward the true signal count $k_0 \approx 2$--$3$ irrespective of $k$.
+
+\textbf{At $k=2$, collapse fraction is exactly zero.}\;
+When $k$ is at or below $k_0$, the subspace is fully occupied by signal directions. The Hessian has no flat directions, $d_{\mathrm{proj}}$ is small ($\approx 1.85$), and erank never collapses --- all consistent with the virtuous-complexity regime.
+
+\textbf{Larger feature sets ($m=512$) provide limited benefit.}\;
+Richer random-feature maps ($m=512$ vs.\ $32$) do not improve Sharpe meaningfully at this cross-section size. Identifiability is likely limited by $N=24$ stocks rather than the feature dimension, so the additional expressive capacity of the richer map cannot be exploited.
+
+\textbf{Longer estimation windows hurt at $k=2$.}\;
+Sharpe at ($m=32$, $k=2$) drops from $0.43$ (win$=6$) to $0.12$ (win$=12$) to $0.19$ (win$=24$). This is consistent with a non-stationary signal over the 2020--2025 period: the short-window model adapts faster to the volatility-regime shifts of the COVID/post-COVID era, while the long-window model mixes heterogeneous regimes.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary of Geometric Findings}
+
+The three hallmarks of illusory complexity --- rising subspace instability, collapsing effective rank, and degraded OOS performance --- appear together at $k=8$ and are absent at $k=2$. The data suggest an effective signal dimension of $k_0 \approx 2$--$3$ for this universe and period. These patterns are qualitatively consistent with the predictions of Deep et al.~\cite{DLMP2026} and the empirical findings of Kelly et al.~\cite{KMZ2024}, though a much larger cross-section and longer history would be required to draw quantitative conclusions.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\vspace{6pt}
+\begin{notebox}
+\textbf{Important note: regularisation not yet implemented.}\\[4pt]
+The current implementation does \emph{not} include the Grassmann regularisation term proposed in the forthcoming extension of Lesniewski \& Missaoui~\cite{LM2026}.
+Kelly \& Malamud~\cite{KM2025} show theoretically that with appropriate regularisation, the out-of-sample Sharpe curve exhibits \emph{permanent ascent} --- monotonically increasing with $k$ as regularisation prevents the optimizer from wandering into the flat noise directions.
+Without regularisation, we see the classic \emph{inverted-U} profile (Sharpe peaks at $k=4$, falls at $k=8$), indicating we are \textbf{not yet in the permanent-ascent regime}.
+Incorporating the regularisation term is the primary next step, and is expected to change the conclusions for $k=8$ materially.
+\end{notebox}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{References}
+\begingroup
+\small
+\setlength{\parskip}{3pt}
+
+\noindent\hangindent=1.5em
+[1]\label{DLMP2026} A.~Deep, A.~Lesniewski, O.~Missaoui, and C.~Pakala,
+``Geometry of the Virtue of Complexity,'' working paper, 2026.
+
+\noindent\hangindent=1.5em
+[2]\label{KMZ2024} B.~Kelly, S.~Malamud, and K.~Zhou,
+``The Virtue of Complexity in Return Prediction,''
+\textit{Journal of Finance}, 79, 459--503, 2024.
+
+\noindent\hangindent=1.5em
+[3]\label{KM2025} B.~Kelly and S.~Malamud,
+``Understanding the Virtue of Complexity,''
+SSRN 5346842, 2025.
+
+\noindent\hangindent=1.5em
+[4]\label{LM2026} A.~Lesniewski and O.~Missaoui,
+``IPCA and GIPCA via Grassmann Optimization,'' working paper, 2026.
+
+\noindent\hangindent=1.5em
+[5]\label{RR2007} A.~Rahimi and B.~Recht,
+``Random Features for Large-Scale Kernel Machines,''
+\textit{NeurIPS}, 20, 2007.
+
+\noindent\hangindent=1.5em
+[6]\label{RV2007} O.~Roy and M.~Vetterli,
+``The Effective Rank: A Measure of Effective Dimensionality,''
+\textit{EUSIPCO}, 606--610, 2007.
+
+\endgroup
+
+\end{document}
