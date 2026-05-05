@@ -1,0 +1,290 @@
+\usepackage{times}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{makeidx} 
+\usepackage{graphicx}
+\usepackage{mathrsfs}
+\usepackage{tabularx}
+\usepackage{caption}
+\usepackage{bbold}
+\usepackage{color}
+\usepackage{fancybox}
+\usepackage{verbatim}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{float}
+\usepackage{url}
+\usetikzlibrary{arrows,automata}
+\usetikzlibrary{trees}
+\usetikzlibrary{shadows}
+\usepackage[framemethod=TikZ]{mdframed}
+\usepackage{mdframed}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{booktabs}
+\usepackage{youngtab}
+\mdfdefinestyle{theorem}{%
+	linecolor=black,
+	outerlinewidth=.5pt,
+	roundcorner=5pt,
+	innertopmargin=.5\baselineskip,
+	innerbottommargin=.75\baselineskip,
+	innerrightmargin=20pt,
+	innerleftmargin=20pt,
+	backgroundcolor=green!20,
+	shadow=true,
+	shadowcolor=green!20}
+\mdfdefinestyle{algo}{%
+	linecolor=black,
+	outerlinewidth=.5pt,
+	roundcorner=5pt,
+	innertopmargin=.5\baselineskip,
+	innerbottommargin=.75\baselineskip,
+	innerrightmargin=10pt,
+	innerleftmargin=10pt,
+	backgroundcolor=yellow!20,
+	shadow=true,
+	shadowcolor=yellow!20}
+\mdfdefinestyle{example}{%
+	linecolor=black,
+	outerlinewidth=.5pt,
+	leftline = false,
+	rightline = false,
+	%roundcorner=5pt,
+	innertopmargin=.5\baselineskip,
+	innerbottommargin=.75\baselineskip,
+	innerrightmargin=10pt,
+	innerleftmargin=10pt,
+	backgroundcolor=white}
+
+\def\bC{\mathbb{C}}
+\def\bH{\mathbb{H}}
+\def\bI{\mathbb{I}}
+\def\bJ{\mathbb{J}}
+\def\bK{\mathbb{K}}
+\def\bN{\mathbb{N}}
+\def\bP{\mathbb{P}}
+\def\bR{\mathbb{R}}
+\def\bS{\mathbb{S}}
+\def\bZ{\mathbb{Z}}
+\def\b1{\mathbb{1}}
+
+\def\bfA{\mathbf{A}}
+\def\bfb{\mathbf{b}}
+\def\bfB{\mathbf{B}}
+\def\bfC{\mathbf{C}}
+\def\bfD{\mathbf{D}}
+\def\bfE{\mathbf{E}}
+\def\bfF{\mathbf{F}}
+\def\bfG{\mathbf{G}}
+\def\bfH{\mathbf{H}}
+\def\bfJ{\mathbf{J}}
+\def\bfK{\mathbf{K}}
+\def\bfL{\mathbf{L}}
+\def\bfM{\mathbf{M}}
+\def\bfN{\mathbf{N}}
+\def\bfP{\mathbf{P}}
+\def\bfQ{\mathbf{Q}}
+\def\bfR{\mathbf{R}}
+\def\bfS{\mathbf{S}}
+\def\bfU{\mathbf{U}}
+\def\bfx{\mathbf{x}}
+
+\def\e1{\mathsf{1}}
+\def\eD{\mathsf{D}}
+\def\eE{\mathsf{E}}
+\def\eF{\mathsf{F}}
+\def\eH{\mathsf{H}}
+\def\eI{\mathsf{I}}
+\def\eM{\mathsf{M}}
+\def\eP{\mathsf{P}}
+\def\eQ{\mathsf{Q}}
+\def\eS{\mathsf{S}}
+\def\eT{\mathsf{T}}
+\def\eQj{\mathsf{Q}_j}
+\def\eQk{\mathsf{Q}_k}
+\def\eQl{\mathsf{Q}_l}
+\def\eQmn{\mathsf{Q}_{mn}}
+\def\en{\mathsf{n}}
+\def\ep{\mathsf{p}}
+\def\eq{\mathsf{q}}
+
+\def\tT{\mathtt{T}}
+
+\def\fa{{\mathfrak{a}}}
+\def\fb{{\mathfrak{b}}}
+\def\fc{{\mathfrak{c}}}
+\def\fd{{\mathfrak{d}}}
+\def\fe{{\mathfrak{e}}}
+\def\ff{{\mathfrak{f}}}
+\def\fg{{\mathfrak{g}}}
+\def\fh{{\mathfrak{h}}}
+\def\fl{{\mathfrak{l}}}
+\def\fm{{\mathfrak{m}}}
+\def\fn{{\mathfrak{n}}}
+\def\fo{{\mathfrak{o}}}
+\def\fp{{\mathfrak{p}}}
+\def\fr{{\mathfrak{r}}}
+\def\fs{{\mathfrak{s}}}
+\def\ft{{\mathfrak{t}}}
+\def\fv{{\mathfrak{v}}}
+\def\fw{{\mathfrak{w}}}
+\def\fz{{\mathfrak{z}}}
+\def\fA{{\mathfrak{A}}}
+\def\fB{{\mathfrak{B}}}
+\def\fC{{\mathfrak{C}}}
+\def\fD{{\mathfrak{D}}}
+\def\fF{{\mathfrak{F}}}
+\def\fG{{\mathfrak{G}}}
+\def\fH{{\mathfrak{H}}}
+\def\fI{{\mathfrak{I}}}
+\def\fL{{\mathfrak{L}}}
+\def\fM{{\mathfrak{M}}}
+\def\fN{{\mathfrak{N}}}
+\def\fO{{\mathfrak{O}}}
+\def\fP{{\mathfrak{P}}}
+\def\fR{{\mathfrak{R}}}
+\def\fS{{\mathfrak{S}}}
+\def\fT{{\mathfrak{T}}}
+\def\fU{{\mathfrak{U}}}
+\def\fV{{\mathfrak{V}}}
+\def\fX{{\mathfrak{X}}}
+\def\fW{{\mathfrak{W}}}
+\def\fZ{{\mathfrak{Z}}}
+
+\def\cA{\mathcal{A}}
+\def\cB{\mathcal{B}}
+\def\cC{\mathcal{C}}
+\def\cD{{\mathcal{D}}}
+\def\cE{{\mathcal{E}}}
+\def\cF{{\mathcal{F}}}
+\def\cG{{\mathcal{G}}}
+\def\cH{{\mathcal{H}}}
+\def\cI{{\mathcal{I}}}
+\def\cJ{{\mathcal{J}}}
+\def\cK{{\mathcal{K}}}
+\def\cL{\mathcal{L}}
+\def\cM{\mathcal{M}}
+\def\cN{\mathcal{N}}
+\def\cO{{\mathcal{O}}}
+\def\cP{{\mathcal{P}}}
+\def\cQ{{\mathcal{Q}}}
+\def\cR{{\mathcal{R}}}
+\def\cS{{\mathcal{S}}}
+\def\cT{{\mathcal{T}}}
+\def\cU{{\mathcal{U}}}
+\def\cV{{\mathcal{V}}}
+\def\cX{{\mathcal{X}}}
+\def\cY{{\mathcal{Y}}}
+\def\cZ{{\mathcal{Z}}}
+
+\def\sC{{\mathscr{C}}}
+\def\sD{{\mathscr{D}}}
+\def\sE{{\mathscr{E}}}
+\def\sF{{\mathscr{F}}}
+\def\sG{{\mathscr{G}}}
+\def\sH{{\mathscr{H}}}
+\def\sL{{\mathscr{L}}}
+\def\sO{{\mathscr{O}}}
+\def\sS{{\mathscr{S}}}
+\def\sX{{\mathscr{X}}}
+\def\sY{{\mathscr{Y}}}
+\def\sZ{{\mathscr{Z}}}
+
+\def\tc{{\text{c}}}
+\def\tf{{\text{f}}}
+
+\def\cov{\mathsf{Cov}}
+\def\corr{\mathsf{Corr}}
+\def\var{\mathsf{Var}}
+\def\prob{\mathsf{prob}}
+\def\dom{\mathsf{dom}}
+\def\sign{\mathsf{sign}}
+\def\rank{\mathsf{rank}}
+\def\e1{\mathsf{1}}
+
+\def\ofa{(a)}
+\def\ofb{(b)}
+\def\ofi{(i)}
+\def\ofK{(K)}
+\def\ofp{(p)}
+\def\ofr{(r)}
+\def\ofs{(s)}
+\def\ofS{(S)}
+\def\oft{(t)}
+\def\ofT{(T)}
+\def\ofT{(T)}
+\def\ofu{(u)}
+\def\ofv{(v)}
+\def\ofw{(w)}
+\def\ofx{(x)}
+\def\ofy{(y)}
+\def\ofz{(z)}
+\def\of0{(0)}
+\def\oftau{(\tau)}
+
+\def\d{\partial}
+\def\tr{\mathrm{tr}}
+\def\id{\mathrm{I}}
+\def\bfId{\mathbf{I}}
+\def\bfNabla{\mathbf{\nabla}}
+\def\bf0{\mathbf{0}}
+\def\cp1{\mathbb{CP}^1}
+\def\matn{\mathrm{Mat}_n(\bR)}
+\def\symn{\mathrm{Sym}_n(\bR)}
+\def\Gr{\mathrm{Gr}}
+\def\arg{\mathrm{arg}}
+\def\im{\mathrm{Im}}
+\def\re{\mathrm{Re}}
+\def\argmax{\mathop{\arg\max}}
+\def\Exp{\mathrm{Exp}}
+
+\def\parP{\mathrm{PAR}}
+\def\pv{\textsf{PV}}
+\def\df{\mathrm{Df}}
+
+\def\erf{\mathrm{erf}}
+
+%Elliptic functions
+\def\am{\mathrm{am}}
+\def\sn{\mathrm{sn}}
+\def\cn{\mathrm{cn}}
+\def\dn{\mathrm{dn}}
+
+%Normalized Hermite polynomials
+\def\Her{\mathrm{He}}
+\def\her{h}
+
+\newtheorem{theorem}{Theorem}[section]
+%\newtheorem{algorithm}[theorem]{Algorithm}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{case}[theorem]{Case}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{conclusion}[theorem]{Conclusion}
+\newtheorem{condition}[theorem]{Condition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{criterion}[theorem]{Criterion}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{exercise}[theorem]{Exercise}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{problem}[theorem]{Problem}
+\newtheorem{proposition}[theorem]{Proposition}
+%\newtheorem{remark}[theorem]{Remark}
+\newtheorem{solution}[theorem]{Solution}
+\newtheorem{summary}[theorem]{Summary}
+
+%\newenvironment{proof}[1][Proof]{\noindent\textbf{#1:} }{\ \rule{0.5em}{0.5em}}
+%\newenvironment{example}[1][Example]{\vskip.2cm\noindent\textbf{#1}. }{\ \vskip.2cm}
+
+\newenvironment{remark}[1][Remark.]{\begin{trivlist}
+		\item[\hskip \labelsep {\bfseries #1}]}{\end{trivlist}}
+
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\ad}{ad}
