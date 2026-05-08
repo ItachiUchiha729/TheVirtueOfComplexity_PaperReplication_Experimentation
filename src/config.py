@@ -27,7 +27,6 @@ PLOTS_DIR = ROOT_DIR / "plots"
 DOCS_DIR = ROOT_DIR / "docs"
 
 
-
 # =============================================================================
 # Data Files
 # =============================================================================
@@ -40,9 +39,6 @@ NBER_DATA_FILE = DATA_DIR / "NBER_20210719_cycle_dates_pasted.csv"
 
 # Cached simulation results
 METRICS_CACHE_FILE = CACHE_DIR / "metrics.parquet"
-
-#Added jkp data
-JKP_DATA_FILE = DATA_DIR / "jkp.csv"
 
 
 # =============================================================================
