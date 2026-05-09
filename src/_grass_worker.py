@@ -27,10 +27,11 @@ Usage from the notebook cell:
 import os
 import itertools
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from joblib import Parallel, delayed
+from joblib import Parallel, delayed, dump, load
 
 try:
     # Package-context imports (e.g. "from src._grass_worker import ...")
@@ -320,6 +321,93 @@ def run_sweep(jobs, n_workers=None, verbose=False):
         verbose      = 10 if verbose else 0,
         pre_dispatch = "all",   # all jobs queued immediately; workers never idle
     )(delayed(_run_one)(j) for j in jobs)
+
+
+def _job_checkpoint_path(job: dict, checkpoint_dir) -> Path:
+    """Stable checkpoint filename for one (k, P, z, seed) job."""
+    checkpoint_dir = Path(checkpoint_dir)
+    z_safe = str(job["z_label"]).replace("+", "").replace("-", "m")
+    name = (
+        f"k{job['num_fact']}"
+        f"_P{job['n_feat']}"
+        f"_{z_safe}"
+        f"_seed{job['seed']}.joblib"
+    )
+    return checkpoint_dir / name
+
+
+def _run_one_with_checkpoint(job: dict, checkpoint_dir, force: bool = False) -> dict:
+    """
+    Run one job and persist the raw result immediately.
+
+    A separate file per job keeps parallel writes simple and makes interrupted
+    notebook runs resumable without waiting for an entire sweep to finish.
+    """
+    path = _job_checkpoint_path(job, checkpoint_dir)
+    if path.exists() and not force:
+        return load(path)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    res = _run_one(job)
+
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    dump(res, tmp_path)
+    os.replace(tmp_path, path)
+    return res
+
+
+def run_sweep_checkpointed(
+    jobs,
+    checkpoint_dir,
+    n_workers=None,
+    verbose=False,
+    force=False,
+):
+    """
+    Dispatch jobs in parallel while checkpointing each completed raw result.
+
+    Parameters
+    ----------
+    jobs : list[dict]
+        Jobs from build_jobs().
+    checkpoint_dir : str or Path
+        Directory where one .joblib file per job will be written.
+    force : bool, default False
+        If True, rerun jobs even when checkpoint files already exist.
+
+    Returns
+    -------
+    list[dict]
+        Raw results, suitable for aggregate().
+    """
+    if n_workers is None:
+        n_workers = _optimal_workers(jobs)
+
+    if verbose:
+        checkpoint_dir = Path(checkpoint_dir)
+        existing = sum(
+            _job_checkpoint_path(j, checkpoint_dir).exists()
+            for j in jobs
+        )
+        n_jobs_total = len(jobs)
+        cost_range = (
+            f"cost range {_job_cost(jobs[-1]):.0f}-{_job_cost(jobs[0]):.0f}"
+            if jobs else ""
+        )
+        print(
+            f"Dispatching {n_jobs_total} jobs across {n_workers} workers "
+            f"({cost_range}, {existing} checkpointed, LPT order) ..."
+        )
+
+    return Parallel(
+        n_jobs       = n_workers,
+        backend      = "loky",
+        verbose      = 10 if verbose else 0,
+        pre_dispatch = "all",
+    )(
+        delayed(_run_one_with_checkpoint)(j, checkpoint_dir, force)
+        for j in jobs
+    )
 
 
 def run_sweep_mktcap(jobs, n_workers=None, verbose=False):
