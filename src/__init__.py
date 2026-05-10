@@ -10,6 +10,7 @@ Modules:
     backtest: Ridge regression backtesting framework
 """
 
+from backtest_nn import BacktestNN
 from src.backtest import Backtest
 from src.config import (
     DATA_DIR,
@@ -32,6 +33,20 @@ __all__ = [
     "ensure_dirs_exist",
     "load_data",
     "load_nber",
+    "dl_openap_subset",
+    "IPCAWorkflow",
+    "IPCAMatrices",
+    "build_experiment_excel_name",
+    "build_quantile_portfolios",
+    "build_long_only_portfolio",
+    "build_directional_portfolio",
+    "compute_portfolio_returns",
+    "portfolio_performance",
+    "plot_cumulative",
 ]
+if BacktestNN is not None:
+    __all__.append("BacktestNN")
 
 __version__ = "0.1.0"
+
+
