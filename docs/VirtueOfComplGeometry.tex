@@ -1034,6 +1034,8 @@ The broad-grid synthetic study validates the main geometric mechanisms in a cont
 
 These experiments ask a narrower question than the broad-grid analysis. The issue is not whether every finite-sample curve is monotone; they are not; but whether, near and beyond the interpolation boundary, richer feature lifts improve out-of-sample behavior without degrading the internal geometry of the fitted representation. Because the window length and grid differ from the broad-grid runs, the Sharpe levels should be read as within-experiment comparisons rather than as directly comparable performance numbers. The point is the geometry-performance relation around the interpolation boundary.
 
+This setup also makes contact with the double-descent intuition in the virtue-of-complexity literature \cite{KMZ24,KM25}. Because the grid visibly crosses the interpolation threshold, the dashed boundary in the figures should be read as a stress point rather than as a terminal limit: performance need not improve smoothly at the threshold itself, but can recover and strengthen again once the model moves into the overparameterized region with sufficient regularization and with a fitted rank that remains well aligned with the underlying signal.
+
 \begin{table}[H]
 \centering
 \caption{Headline comparison for the three short-window synthetic runs. ``Best tail'' refers to the best average OOS $R^2$ attained in the high-complexity tail.}
@@ -1763,6 +1765,8 @@ specifications have crossed into positive territory, reaching approximately
 $+0.34\%$ and $+0.40\%$, respectively. Since $\tilde m=24$ corresponds to
 $p/n=0.48$ in the two primary specifications, the predictive crossover occurs
 in the under-parameterized regime.
+
+This early crossover is not just a parameter-count effect. Even at relatively low complexity, the RFF lift already opens nonlinear interaction channels among the original characteristics, so the move from the linear baseline to $\tilde m=24$ can reveal return structure that a purely linear exposure map cannot express. That helps explain why the sharpest improvement in $R^2_{\mathrm{OOS}}$ appears before the interpolation threshold is reached.
 
 Second, there is a geometric-refinement phase between $\tilde m=24$ and $\tilde m=512$.
 In this range, $R^2_{\mathrm{OOS}}$ continues to improve while the factor
