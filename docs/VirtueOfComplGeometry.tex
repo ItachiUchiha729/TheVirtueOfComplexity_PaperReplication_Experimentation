@@ -864,7 +864,7 @@ We present the findings in order of diagnostic value. We begin with the two stro
 \subsubsection{Drift anisotropy}
 \label{sec:sim:aniso}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.78\textwidth]{fig_synth_aniso.pdf}
 \caption{Drift anisotropy
@@ -887,7 +887,7 @@ This pattern is emergent relative to the construction of the synthetic drift. Th
 \subsubsection{Paired regime separation}
 \label{sec:sim:matched}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{fig_p6_1.png}
 \caption{Paired comparison at $\tilde m=1024$: mean projection distance
@@ -905,7 +905,7 @@ The practical implication is that $\dproj$ is best interpreted as a regime class
 \subsubsection{Geometric response to increasing \texorpdfstring{$z$}{z}}
 \label{sec:sim:zgrid}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.78\textwidth]{fig_p3_1.png}
 \caption{Geometric metrics ($d_{\mathrm{proj}}$, $\psi_{\max}$,
@@ -925,7 +925,7 @@ Taken together, the broad-grid diagnostics separate three effects that are confo
 \subsubsection{\texorpdfstring{$z=0$}{z=0} erratic versus \texorpdfstring{$z>0$}{z>0} clean peaks}
 \label{sec:sim:erratic}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{fig_p4_2.png}
 \caption{Annualized Sharpe ratio versus factor dimension $k$ at
@@ -943,7 +943,7 @@ structure beyond the true rank. Once the signal space has been filled, extra dir
 \subsubsection{Spectral gap cliff at \texorpdfstring{$k_0$}{k0}}
 \label{sec:sim:sg}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.78\textwidth]{fig_p2_1.png}
 \caption{Spectral gap $\lambda_k/\lambda_1$ versus factor dimension $k$
@@ -960,7 +960,7 @@ The spectral gap drops sharply at the true rank and then collapses for larger $k
 \subsubsection{Effective rank collapse}
 \label{sec:sim:erank}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{fig_p5_1.png}
 \caption{Effective rank $\mathrm{erank}(\hat\Sigma_f)$ (left) and
@@ -1707,8 +1707,8 @@ while configurations with $\tilde m\geq 512$ are averaged over 3 seeds. The prim
 comparisons are $k=12,T=24$ and $k=18,T=36$, supplemented by the previously
 reported $k=14,T=36$ results.
 
-We report both predictive and geometric diagnostics. The predictive metrics are
-out-of-sample $R^2_{\mathrm{OOS}}$, Sharpe ratio, and maximum drawdown. The
+We report both predictive and geometric diagnostics. In the discussion below,
+the predictive emphasis is on out-of-sample $R^2_{\mathrm{OOS}}$, while the
 geometric metrics are the effective rank of the estimated factor covariance,
 the gap ratio $\lambda_{\min}/\lambda_{\max}$ of $\hat\Sigma_f$, the
 geodesic Grassmann distance $d_{\mathrm{geo}}$, the maximum principal angle
@@ -1755,40 +1755,94 @@ that produces the strongest predictive results in the extended study.
 	\label{fig:ext_crossover}
 \end{figure}
 
-Three empirical phases are visible across the two primary specifications,
+Figure~\ref{fig:ext_r2compare} extends the crossover view by collecting the
+full
+$R^2_{\mathrm{OOS}}$ curves across the main factor-count and window-length
+specifications in the extended grid.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.78\textwidth,trim=615 0 0 0,clip]{ext_plotI.pdf}
+	\caption{Out-of-sample $R^2$ (in percent) across RFF dimensions in the
+		extended backtest. The longer-window $k=18,T=36$ specification attains
+		the study's new best predictive value of $0.88\%$ at
+		$\tilde m=4096$. The figure also shows that the longer-window
+		specifications dominate their shorter-window counterparts once the RFF
+		dictionary becomes sufficiently rich.}
+	\label{fig:ext_r2compare}
+\end{figure}
+
+Taken together, Figures~\ref{fig:ext_crossover} and~\ref{fig:ext_r2compare}
+show three empirical phases across the two primary specifications,
 $k=12,T=24$ and $k=18,T=36$.
 
-First, there is a structural-discovery phase between $\tilde m=0$ and $\tilde m=24$. The
-linear baseline has negative out-of-sample $R^2$: approximately $-4.95\%$
-for $k=12,T=24$ and $-3.26\%$ for $k=18,T=36$. By $\tilde m=24$, both
-specifications have crossed into positive territory, reaching approximately
-$+0.34\%$ and $+0.40\%$, respectively. Since $\tilde m=24$ corresponds to
-$p/n=0.48$ in the two primary specifications, the predictive crossover occurs
-in the under-parameterized regime.
+First, there is a structural-discovery phase between $\tilde m=0$ and
+$\tilde m=24$. The linear baseline has negative out-of-sample $R^2$:
+approximately $-4.95\%$ for $k=12,T=24$ and $-3.26\%$ for $k=18,T=36$. By
+$\tilde m=24$, both specifications have crossed into positive territory,
+reaching approximately $+0.34\%$ and $+0.40\%$, respectively. Since
+$\tilde m=24$ corresponds to $p/n=0.48$ in the two primary specifications, the
+predictive crossover occurs in the under-parameterized regime.
 
-This early crossover is not just a parameter-count effect. Even at relatively low complexity, the RFF lift already opens nonlinear interaction channels among the original characteristics, so the move from the linear baseline to $\tilde m=24$ can reveal return structure that a purely linear exposure map cannot express. That helps explain why the sharpest improvement in $R^2_{\mathrm{OOS}}$ appears before the interpolation threshold is reached.
+This early crossover is not just a parameter-count effect. Even at relatively
+low complexity, the RFF lift already opens nonlinear interaction channels
+among the original characteristics, so the move from the linear baseline to
+$\tilde m=24$ can reveal return structure that a purely linear exposure map
+cannot express. That helps explain why the sharpest improvement in
+$R^2_{\mathrm{OOS}}$ appears before the interpolation threshold is reached.
 
-Second, there is a geometric-refinement phase between $\tilde m=24$ and $\tilde m=512$.
-In this range, $R^2_{\mathrm{OOS}}$ continues to improve while the factor
-covariance diagnostics become more favorable. This is the range in which the
-nonlinear characteristic dictionary becomes rich enough to improve predictive
-fit without yet exhausting the stabilizing effect of the training sample and
-ridge penalty.
+Second, there is a geometric-refinement phase between $\tilde m=24$ and
+$\tilde m=512$. In this range, $R^2_{\mathrm{OOS}}$ continues to improve while
+the factor covariance diagnostics become more favorable. This is the range in
+which the nonlinear characteristic dictionary becomes rich enough to improve
+predictive fit without yet exhausting the stabilizing effect of the training
+sample and ridge penalty.
 
 Third, there is a high-complexity improvement phase between $\tilde m=512$ and
-$\tilde m=4096$. Predictive performance continues to improve, though with smaller
-marginal gains. The best $R^2_{\mathrm{OOS}}$ in the extended study is
+$\tilde m=4096$. Predictive performance continues to improve, though with
+smaller marginal gains. The best $R^2_{\mathrm{OOS}}$ in the extended study is
 $+0.88\%$, attained at $\tilde m=4096$, $k=18$, and $T=36$. The corresponding
 $k=12,T=24$ configuration reaches $+0.68\%$ at $\tilde m=4096$.
 
-The Sharpe ratio does not peak at the same value of $\tilde m$ as
-$R^2_{\mathrm{OOS}}$. For $k=18,T=36$, the Sharpe ratio reaches its maximum
-near $\tilde m=48$, while $R^2_{\mathrm{OOS}}$ continues to improve through
-$\tilde m=4096$. This divergence is useful: increasing $\tilde m$ can improve predictive
-fit while also changing the risk and turnover properties of the resulting
-portfolio. The extended backtest therefore reinforces the need to interpret
-predictive and portfolio metrics together with the Grassmannian stability
-diagnostics.
+The multi-configuration comparison also sharpens the ranking across factor
+count and training-window length.
+
+The previously reported $k=14,T=36$ specification remains strong throughout
+the grid, but the new $k=18,T=36$ curve overtakes it in the richer-feature
+region and finishes at the study's best predictive value of $+0.88\%$ at
+$\tilde m=4096$.
+
+The shorter-window $k=18,T=24$ configuration also improves monotonically with
+$\tilde m$, but it remains below the longer-window counterpart across the
+high-complexity tail. The $k=12,T=24$ and $k=16,T=24$ curves rise more
+gradually and plateau at materially lower levels, ending near $+0.68\%$ and
+$+0.65\%$, respectively. Thus the richer factor structure is most effective
+when it is paired with a longer estimation window rather than forced to operate
+from the same shorter sample.
+
+This ranking is consistent with the spectral diagnostics developed next.
+Moving from $T=24$ to $T=36$ provides roughly 50 percent more training
+observations and helps stabilize the larger $k=18$ factor specification. In
+particular, the longer-window version maintains a materially higher gap ratio
+at large $\tilde m$ than the corresponding $T=24$ specification, which is
+consistent with the ridge--curvature mechanism: more training data improve the
+estimation of the leading factor directions, while ridge regularization
+stabilizes weak trailing directions.
+
+The shorter-window specifications still exhibit useful threshold behavior. In
+the $k=12,T=24$ case, the first nonlinear feature expansions already produce a
+visible predictive improvement. The main point is not the exact level of
+performance, but the fact that the same early nonlinear lift remains visible
+even when the training window is shorter, while the longer window is especially
+valuable for sustaining larger factor counts and richer feature dictionaries.
+
+Although these values are numerically small, they are economically meaningful
+in the context of individual-stock return prediction, where monthly
+out-of-sample $R^2$ is often well below one percent. The extended backtest
+therefore shows not only an early predictive crossover, but also a clear
+high-complexity ranking: longer training windows and sufficiently rich factor
+structures allow the nonlinear lift to keep translating into incremental
+predictive fit.
 
 \subsubsection{Spectral geometry: effective rank and gap ratio}
 \label{sec:extended:spectral}
@@ -1885,45 +1939,32 @@ The projection-distance diagnostic shows the same broad message. It rises out
 of the frozen regime, reaches an intermediate region, and then stabilizes or
 declines rather than exploding at large $\tilde m$.
 
+Taken together, the extended backtest sharpens the historical picture in three
+ways. First, it makes the interpolation boundary visible:
+$R^2_{\mathrm{OOS}}$ crosses zero before $p/n=1$, consistent with
+Theorem~\ref{thm:pop-signal-subspace} and with the view that the signal
+subspace can become accessible before the nominal interpolation threshold is
+reached. Second, it clarifies the role of training-window length. The longer
+$T=36$ window materially weakens the high-$\tilde m$ spectral compression seen
+at $T=24$, which is consistent with
+Theorem~\ref{thm:curv-erank}(ii)--(iii): additional observations stabilize the
+signal eigenvalues and preserve curvature along the informative directions.
+Third, because the universe is selected on a rolling basis, the same broad
+metric patterns appear without relying on the fixed top-50 selection used in
+the baseline section. The best extended configuration, $k=18, T=36$, achieves
+both the strongest $R^2_{\mathrm{OOS}}$ and the cleanest spectral geometry,
+suggesting that a richer factor structure can be beneficial when the sample
+size is sufficient to prevent curvature collapse.
 
-\subsubsection{Training-window effects and performance tradeoffs}
-\label{sec:extended:window}
-
-The extended study also isolates the effect of the rolling training-window
-length. Figure~\ref{fig:ext_T} compares the main performance metrics across
-the factor-count and window-length specifications.
-
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=0.92\textwidth]{ext_plotI.pdf}
-	\caption{Performance metrics across RFF dimensions in the extended
-		backtest. Left: Sharpe ratio, with the $k=18,T=36$ peak occurring
-		near $\tilde m=48$. Center: maximum drawdown
-		(percent), with the $y$-axis inverted so that deeper drawdowns
-		are lower. Right: out-of-sample $R^2$ in percent, with the
-		study's new best predictive value for $k=18,T=36$ at $\tilde m=4096$
-		annotated. The $k=18,T=36$ specification achieves its highest
-		$R^2_{\mathrm{OOS}}$ at $\tilde m=4096$, while its Sharpe ratio peaks
-		at a much smaller RFF dimension; this illustrates the
-		difference between predictive improvement and portfolio-level
-		performance.}
-	\label{fig:ext_T}
-\end{figure}
-
-The $k=18,T=36$ specification is the strongest predictive configuration in the extended grid. It reaches $R^2_{\mathrm{OOS}}=+0.88\%$ at $\tilde m=4096$, exceeding the previously reported $k=14,T=36$ value of approximately $0.85\%$ and the $k=12,T=24$ value of approximately $0.68\%$. Its portfolio performance, however, peaks much earlier in the feature grid. Thus larger $\tilde m$ continues to improve predictive fit, while the portfolio objective prefers a smaller, more stable region of the feature expansion.
-
-The comparison between $T=24$ and $T=36$ is consistent with the spectral diagnostics. The longer window provides roughly 50 percent more training observations and helps stabilize the larger $k=18$ factor specification. In particular, the $T=36$ version maintains a materially higher gap ratio at large $\tilde m$ than the corresponding $T=24$ version. This is consistent with the ridge--curvature mechanism: more training data improve the estimation of the leading factor directions, while ridge regularization stabilizes weak trailing directions.
-
-The shorter-window specifications still exhibit useful threshold behavior. In the $k=12,T=24$ case, the first nonlinear feature expansions already produce a visible portfolio improvement. The main point is not the exact Sharpe level, but the fact that the performance and geometry move in the same direction as in the baseline analysis: nonlinear lifting improves the useful signal region early, while the longer window is especially valuable for sustaining larger factor counts and richer feature dictionaries.
-
-All reported Sharpe ratios are gross of transaction costs. With monthly rebalancing of a rolling 50-stock universe, turnover may be substantial because both the universe and the position-sizing rule vary over time. The $R^2_{\mathrm{OOS}}$ values are nevertheless economically meaningful as predictive diagnostics: monthly out-of-sample $R^2$ values for individual stock return prediction in the literature are often small, commonly well below one percent. Direct comparison is difficult because the present study uses a different universe and model architecture. A full transaction-cost analysis is therefore beyond the scope of this paper, whose main contribution is the geometric diagnostic framework rather than the implementation of a production trading strategy.
-
-\subsubsection{Extended asset pricing results synthesis}
-\label{sec:extended:summary}
-
-The extended backtest sharpens the historical picture in three ways. First, it makes the interpolation boundary visible: $R^2_{\mathrm{OOS}}$ crosses zero before $p/n=1$, consistent with Theorem~\ref{thm:pop-signal-subspace} and with the view that the signal subspace can become accessible before the nominal interpolation threshold is reached. Second, it clarifies the role of training-window length. The longer $T=36$ window materially weakens the high-$\tilde m$ spectral compression seen at $T=24$, which is consistent with Theorem~\ref{thm:curv-erank}(ii)--(iii): additional observations stabilize the signal eigenvalues and preserve curvature along the informative directions. Third, because the universe is selected on a rolling basis, the same broad metric patterns appear without relying on the fixed top-50 selection used in the baseline section. The best extended configuration, $k=18, T=36$, achieves both the strongest $R^2_{\mathrm{OOS}}$ and the cleanest spectral geometry, suggesting that a richer factor structure can be beneficial when the sample size is sufficient to prevent curvature collapse.
-
-The extended results also refine the geometric diagnostics themselves. At high $\tilde m$, geodesic Grassmann distances converge across the configurations studied, indicating a common stability regime under strong ridge regularization rather than uncontrolled wandering. At the same time, Sharpe and $R^2_{\mathrm{OOS}}$ need not peak at the same $\tilde m$: predictive fit can continue improving even after portfolio performance has reached its local optimum, which is precisely the kind of trade-off highlighted by the Goldilocks interpretation. One remaining open feature is the appearance of recurrent intermediate-$\tilde m$ dips in some curves. Since this pattern is not explained by the current theory and may reflect properties of the RFF approximation or seed dependence, it should be treated as exploratory rather than as established structural evidence.
+At high $\tilde m$, geodesic Grassmann distances converge across the
+configurations studied, indicating a common stability regime under strong ridge
+regularization rather than uncontrolled wandering. At the same time, the
+multi-configuration $R^2_{\mathrm{OOS}}$ comparison shows that the predictive
+ranking is not perfectly monotone across intermediate $\tilde m$: some
+specifications dip before recovering in the richer-feature region. Since this
+pattern is not explained by the current theory and may reflect properties of
+the RFF approximation or seed dependence, it should be treated as exploratory
+rather than as established structural evidence.
 
 \section{Practitioner Uses}
 \label{sec:pract_use}
