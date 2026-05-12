@@ -1,0 +1,11 @@
+{
+  "bundle": "/Users/apple/Desktop/Academics/Research_work/TheVirtueOfComplexity_PaperReplication_Experimentation-master/standalone_experiment_ppp_bundle",
+  "file_count": 117,
+  "notebooks": [
+    "notebooks/expermint_ppp.ipynb",
+    "notebooks/graphs_historical.ipynb",
+    "notebooks/graphs_synthetic.ipynb"
+  ],
+  "root_excel_count": 41,
+  "plot_count": 17
+}

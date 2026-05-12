@@ -1,0 +1,69 @@
+"""The Virtue of Complexity in Return Prediction.
+
+A replication of Kelly, Malamud, & Zhou (2021) demonstrating that
+highly parameterized models can outperform simpler ones in return prediction.
+
+Modules:
+    config: Configuration settings and paths
+    dataset: Data loading and preprocessing for financial data
+    rff: Random Fourier Features implementation
+    backtest: Ridge regression backtesting framework
+"""
+
+from src.backtest import Backtest
+from src.config import (
+    DATA_DIR,
+    DOCS_DIR,
+    PLOTS_DIR,
+    ROOT_DIR,
+    ensure_dirs_exist,
+)
+from src.data_pipeline import IPCAMatrices
+from src.dataset import load_data, load_nber
+from src.ipca_workflow import IPCAWorkflow
+from src.openap_subset import dl_openap_subset
+from src.portfolio_utils import (
+    build_experiment_excel_name,
+    build_directional_portfolio,
+    build_long_only_portfolio,
+    build_quantile_portfolios,
+    compute_portfolio_returns,
+    plot_cumulative,
+    portfolio_performance,
+)
+from src.rff import RandomFourierFeatures, RFF
+
+try:
+    from src.backtest_nn import BacktestNN
+except ModuleNotFoundError as exc:
+    if exc.name != "torch":
+        raise
+    BacktestNN = None
+
+__all__ = [
+    "Backtest",
+    "DATA_DIR",
+    "DOCS_DIR",
+    "PLOTS_DIR",
+    "ROOT_DIR",
+    "RandomFourierFeatures",
+    "RFF",
+    "ensure_dirs_exist",
+    "load_data",
+    "load_nber",
+    "dl_openap_subset",
+    "IPCAWorkflow",
+    "IPCAMatrices",
+    "build_experiment_excel_name",
+    "build_quantile_portfolios",
+    "build_long_only_portfolio",
+    "build_directional_portfolio",
+    "compute_portfolio_returns",
+    "portfolio_performance",
+    "plot_cumulative",
+]
+
+if BacktestNN is not None:
+    __all__.append("BacktestNN")
+
+__version__ = "0.1.0"
