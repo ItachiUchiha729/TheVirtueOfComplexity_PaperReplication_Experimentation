@@ -1060,7 +1060,7 @@ $T=24$: the far-right tail becomes uniformly positive in average out-of-sample $
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.97\linewidth]{synth_v5_main_compare.png}
+\includegraphics[width=0.97\linewidth]{figure_08_synthetic_t24_fitted_rank_comparison.png}
 \caption{Two $T=24$ runs: fitted-rank comparison across average out-of-sample $R^2$, Sharpe ratio, effective rank, and gap ratio. The dashed vertical line marks $\tilde m/T=1$ at $\tilde m=24$.}
 \label{fig:sim:main24}
 \end{figure}
@@ -1071,7 +1071,7 @@ The lower panels matter for the geometry story. In the $k=17$ run, $\erank$ rise
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.97\linewidth]{synth_v5_stability_compare.png}
+\includegraphics[width=0.97\linewidth]{figure_09_synthetic_t24_stability_summaries.png}
 \caption{Stability summaries for the two $T=24$ runs. The dashed vertical line marks $\tilde m/T=1$ at $\tilde m=24$.}
 \label{fig:sim:stability24}
 \end{figure}
@@ -1080,7 +1080,7 @@ The stability comparison is equally useful. Normalized projection distance and m
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.97\linewidth]{synth_v5_window_compare.png}
+\includegraphics[width=0.97\linewidth]{figure_10_synthetic_rank_aligned_window_length_comparison.png}
 \caption{Rank-aligned comparison across window lengths. The red dashed line marks $\tilde m/T=1$ at $\tilde m=24$ for $T=24$, and the purple dashed line marks $\tilde m/T=1$ at $\tilde m=36$ for $T=36$.}
 \label{fig:sim:windowcompare}
 \end{figure}
@@ -1091,7 +1091,7 @@ at $T=36$, with especially strong values already around $\tilde m=32$ and $\tild
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.97\linewidth]{synth_v5_window_stability.png}
+\includegraphics[width=0.97\linewidth]{figure_11_synthetic_rank_aligned_stability_window_comparison.png}
 \caption{Rank-aligned stability comparison across window lengths. The red dashed line marks $\tilde m/T=1$ at $\tilde m=24$ for $T=24$, and the purple dashed line marks $\tilde m/T=1$ at $\tilde m=36$ for $T=36$.}
 \label{fig:sim:windowstability}
 \end{figure}
@@ -1697,15 +1697,17 @@ and the two rolling training-window lengths are
 \begin{equation*}
 T \in \{24,36\}\quad\text{months}.
 \end{equation*}
-The RFF grid is
+The RFF grid is configuration-specific, with the linear baseline
+$\tilde m=0$ and positive RFF dimensions drawn from
 \begin{equation*}
 \tilde m \in
-\{0,24,32,48,64,128,256,512,1024,2048,4096\}.
+\{24,32,48,64,96,128,160,192,224,256,320,384,512,1024,2048,4096\}.
 \end{equation*}
 Configurations with $\tilde m\leq 256$ are averaged over 12 independent RFF seeds,
 while configurations with $\tilde m\geq 512$ are averaged over 3 seeds. The primary
 comparisons are $k=12,T=24$ and $k=18,T=36$, supplemented by the previously
-reported $k=14,T=36$ results.
+reported $k=14,T=36$ results, the shorter-window $k=18,T=24$ comparison, and
+the $k=16,T=24$ geometric diagnostics.
 
 We report both predictive and geometric diagnostics. In the discussion below,
 the predictive emphasis is on out-of-sample $R^2_{\mathrm{OOS}}$, while the
@@ -1736,8 +1738,10 @@ $\tilde m=50$.
 
 The first extended diagnostic studies how out-of-sample predictive fit changes
 as the RFF dictionary grows. Figure~\ref{fig:ext_crossover} shows the
-$R^2_{\mathrm{OOS}}$ crossover for $k=18,T=36,z=100$, the specification
-that produces the strongest predictive results in the extended study.
+$R^2_{\mathrm{OOS}}$ crossover for $k=18,T=36,z=100$, the specification that
+produces the strongest predictive results in the extended study. Figure
+\ref{fig:ext_r2compare} then reports the available $R^2_{\mathrm{OOS}}$ curves
+for the extended historical grid.
 
 \begin{figure}[H]
 	\centering
@@ -1747,42 +1751,40 @@ that produces the strongest predictive results in the extended study.
 		The upper panel shows the linear baseline at $p/n=0$ where
 		$R^2_{\mathrm{OOS}}=-3.26\%$; the lower panel shows the RFF
 		specifications. The shaded regions distinguish the
-		under-parameterized and over-parameterized regimes, and the
-		dashed vertical line marks the interpolation threshold $p/n=1$.
-		The annotated crossover from negative to positive
-		$R^2_{\mathrm{OOS}}$ occurs at $p/n\approx 0.48$ ($\tilde m=24$),
-		\emph{before} the interpolation threshold.}
+		under-parameterized and over-parameterized regimes, and the dashed
+		vertical line marks the interpolation threshold $p/n=1$. The annotated
+		crossover from negative to positive $R^2_{\mathrm{OOS}}$ occurs at
+		$p/n\approx 0.48$ ($\tilde m=24$), \emph{before} the interpolation
+		threshold.}
 	\label{fig:ext_crossover}
 \end{figure}
 
-Figure~\ref{fig:ext_r2compare} extends the crossover view by collecting the
-full
-$R^2_{\mathrm{OOS}}$ curves across the main factor-count and window-length
-specifications in the extended grid.
-
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.78\textwidth,trim=615 0 0 0,clip]{ext_plotI.pdf}
+	\includegraphics[width=0.82\textwidth]{figure_18_extended_backtest_oos_r2_vs_rff.png}
 	\caption{Out-of-sample $R^2$ (in percent) across RFF dimensions in the
 		extended backtest. The longer-window $k=18,T=36$ specification attains
 		the study's new best predictive value of $0.88\%$ at
-		$\tilde m=4096$. The figure also shows that the longer-window
-		specifications dominate their shorter-window counterparts once the RFF
-		dictionary becomes sufficiently rich.}
+		$\tilde m=4096$. The $k=14,T=36$ curve finishes close behind at
+		$0.85\%$, while the shorter-window $k=18,T=24$ and $k=12,T=24$
+		curves end at $0.72\%$ and $0.68\%$, respectively.}
 	\label{fig:ext_r2compare}
 \end{figure}
 
 Taken together, Figures~\ref{fig:ext_crossover} and~\ref{fig:ext_r2compare}
-show three empirical phases across the two primary specifications,
-$k=12,T=24$ and $k=18,T=36$.
+show three empirical phases across the extended grid, with the two primary
+specifications $k=12,T=24$ and $k=18,T=36$ providing the cleanest before-and-after
+comparison.
 
 First, there is a structural-discovery phase between $\tilde m=0$ and
 $\tilde m=24$. The linear baseline has negative out-of-sample $R^2$:
 approximately $-4.95\%$ for $k=12,T=24$ and $-3.26\%$ for $k=18,T=36$. By
-$\tilde m=24$, both specifications have crossed into positive territory,
-reaching approximately $+0.34\%$ and $+0.40\%$, respectively. Since
+$\tilde m=24$, both primary specifications have crossed into positive
+territory, reaching approximately $+0.34\%$ and $+0.40\%$, respectively. Since
 $\tilde m=24$ corresponds to $p/n=0.48$ in the two primary specifications, the
-predictive crossover occurs in the under-parameterized regime.
+predictive crossover occurs in the under-parameterized regime. The additional
+$k=14,T=36$ and $k=18,T=24$ curves enter the exported grid at $\tilde m=32$ and
+are already positive, at approximately $+0.44\%$ and $+0.31\%$.
 
 This early crossover is not just a parameter-count effect. Even at relatively
 low complexity, the RFF lift already opens nonlinear interaction channels
@@ -1792,14 +1794,14 @@ cannot express. That helps explain why the sharpest improvement in
 $R^2_{\mathrm{OOS}}$ appears before the interpolation threshold is reached.
 
 Second, there is a geometric-refinement phase between $\tilde m=24$ and
-$\tilde m=512$. In this range, $R^2_{\mathrm{OOS}}$ continues to improve while
-the factor covariance diagnostics become more favorable. This is the range in
-which the nonlinear characteristic dictionary becomes rich enough to improve
-predictive fit without yet exhausting the stabilizing effect of the training
-sample and ridge penalty.
+$\tilde m=512$. In this range, the $R^2_{\mathrm{OOS}}$ envelope generally
+improves while the factor covariance diagnostics become more favorable. This is
+the range in which the nonlinear characteristic dictionary becomes rich enough
+to improve predictive fit without yet exhausting the stabilizing effect of the
+training sample and ridge penalty.
 
 Third, there is a high-complexity improvement phase between $\tilde m=512$ and
-$\tilde m=4096$. Predictive performance continues to improve, though with
+$\tilde m=4096$. The best-performing curves continue to improve, though with
 smaller marginal gains. The best $R^2_{\mathrm{OOS}}$ in the extended study is
 $+0.88\%$, attained at $\tilde m=4096$, $k=18$, and $T=36$. The corresponding
 $k=12,T=24$ configuration reaches $+0.68\%$ at $\tilde m=4096$.
@@ -1812,13 +1814,12 @@ the grid, but the new $k=18,T=36$ curve overtakes it in the richer-feature
 region and finishes at the study's best predictive value of $+0.88\%$ at
 $\tilde m=4096$.
 
-The shorter-window $k=18,T=24$ configuration also improves monotonically with
-$\tilde m$, but it remains below the longer-window counterpart across the
-high-complexity tail. The $k=12,T=24$ and $k=16,T=24$ curves rise more
-gradually and plateau at materially lower levels, ending near $+0.68\%$ and
-$+0.65\%$, respectively. Thus the richer factor structure is most effective
-when it is paired with a longer estimation window rather than forced to operate
-from the same shorter sample.
+The shorter-window $k=18,T=24$ configuration also improves overall with
+$\tilde m$, despite small mid-grid dips, but it remains below the longer-window
+counterpart across the high-complexity tail and ends at $+0.72\%$. The
+$k=12,T=24$ curve rises more gradually and ends at $+0.68\%$. Thus the richer
+factor structure is most effective when it is paired with a longer estimation
+window rather than forced to operate from the same shorter sample.
 
 This ranking is consistent with the spectral diagnostics developed next.
 Moving from $T=24$ to $T=36$ provides roughly 50 percent more training
@@ -1854,7 +1855,7 @@ $\hat\Sigma_f$ across the extended grid.
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.92\textwidth]{ext_plotC.pdf}
+	\includegraphics[width=0.92\textwidth]{figure_19_extended_backtest_spectral_diagnostics.png}
 	\caption{Spectral diagnostics in the extended backtest. Left:
 		effective rank $\mathrm{erank}(\hat\Sigma_f)$ versus RFF
 		dimension $\tilde m$ on a log scale. Right: gap ratio
@@ -1895,22 +1896,19 @@ when the training window is sufficiently long and the ridge penalty is strong.
 
 The next question is whether the larger RFF dictionaries produce stable
 Grassmannian motion or merely increase subspace wandering. Figure
-\ref{fig:ext_stability} reports three stability diagnostics across $\tilde m$:
-the mean geodesic Grassmann distance, the maximum principal angle, and the
-projection distance.
+\ref{fig:ext_stability} reports two stability diagnostics across $\tilde m$:
+the mean geodesic Grassmann distance and the maximum principal angle.
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.92\textwidth]{ext_plotD.pdf}
+	\includegraphics[width=0.92\textwidth]{figure_20_extended_backtest_subspace_stability_diagnostics.png}
 	\caption{Subspace stability diagnostics in the extended backtest.
-		Left: mean geodesic Grassmann distance versus $\tilde m$, with the
-		gray dashed line marking the high-$\tilde m$ cluster level
-		$\approx 1.21$ that all configurations approach. Right:
+		Left: mean geodesic Grassmann distance versus $\tilde m$. Right:
 		maximum principal angle $\psi_{\max}$ versus $\tilde m$ in radians.
-		Shaded bands indicate $\pm1$ standard deviation across RFF
-		seeds. Across the configurations studied, the high-$\tilde m$ region
-		exhibits a common stability profile rather than uncontrolled
-		Grassmannian wandering.}
+		Shaded bands indicate $\pm1$ standard deviation across RFF seeds.
+		Across the configurations studied, the high-$\tilde m$ region exhibits
+		a common stability profile rather than uncontrolled Grassmannian
+		wandering.}
 	\label{fig:ext_stability}
 \end{figure}
 
@@ -1935,12 +1933,13 @@ largest single subspace rotation becomes smaller in richer RFF dictionaries.
 This is consistent with the Goldilocks interpretation developed in
 Section~\ref{sec:goldilocks}: useful configurations are not those with maximal
 subspace motion, but those in which movement is controlled and concentrated.
-The projection-distance diagnostic shows the same broad message. It rises out
-of the frozen regime, reaches an intermediate region, and then stabilizes or
-declines rather than exploding at large $\tilde m$.
+The two plotted stability diagnostics therefore point in the same direction:
+larger RFF dictionaries do not produce runaway subspace rotation in the extended
+grid.
 
 Taken together, the extended backtest sharpens the historical picture in three
-ways. First, it makes the interpolation boundary visible:
+ways. First, it confirms that the predictive crossover occurs before the
+interpolation boundary in the two primary specifications:
 $R^2_{\mathrm{OOS}}$ crosses zero before $p/n=1$, consistent with
 Theorem~\ref{thm:pop-signal-subspace} and with the view that the signal
 subspace can become accessible before the nominal interpolation threshold is
